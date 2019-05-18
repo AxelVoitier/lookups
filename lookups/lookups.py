@@ -14,12 +14,23 @@ from typing import Sequence, AbstractSet, Type, Optional
 # Third-party imports
 
 # Local imports
-from . import singleton as singleton_module
+from . import singleton as singleton_module, simple
 from .lookup import Lookup, Item, Result, LookupListener
 
 
 def singleton(member: object, id_: str = None) -> Lookup:
     return singleton_module.SingletonLookup(member, id_)
+
+
+def fixed(*members: object) -> Lookup:
+    if not members:
+        return EmptyLookup()
+
+    elif len(members) == 1:
+        return singleton(members[0])
+
+    else:
+        return simple.SimpleLookup(*members)
 
 
 class NoResult(Result):
