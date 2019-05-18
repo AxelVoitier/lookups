@@ -14,6 +14,7 @@ from .lookup import (
     Lookup, Result, Item,
     LookupProvider, LookupListener, LookupEvent
 )
+from .lookups import singleton
 from .__about__ import (
     __title__, __summary__, __uri__, __version__,
     __author__, __email__, __license__, __copyright__,
@@ -22,6 +23,7 @@ from .__about__ import (
 __all__ = [
     'Lookup', 'Result', 'Item',
     'LookupProvider', 'LookupListener', 'LookupEvent',
+    'singleton',
 
     '__title__', '__summary__', '__uri__', '__version__',
     '__author__', '__email__', '__license__', '__copyright__',
