@@ -1,2 +1,2 @@
 # lookups
-DCI lookups in Python (inspired from Netbeans Platform Lookups API)
+DCI lookups in Python (inspired by Netbeans Platform Lookups API)

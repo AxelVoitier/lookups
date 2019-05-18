@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+flake8 = "*"
+mypy = "*"
+flake8-mypy = "*"
+
+[packages]
+typing-extensions = "*"
+
+[scripts]
+qa = 'flake8'
+tests = 'py.test -x tests'
+clean = 'rm -Rf build dist lookups.egg-info .pytest_cache'
