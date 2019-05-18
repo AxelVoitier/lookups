@@ -10,12 +10,19 @@
 # Third-party imports
 
 # Local imports
+from .lookup import (
+    Lookup, Result, Item,
+    LookupProvider, LookupListener, LookupEvent
+)
 from .__about__ import (
     __title__, __summary__, __uri__, __version__,
     __author__, __email__, __license__, __copyright__,
 )
 
 __all__ = [
+    'Lookup', 'Result', 'Item',
+    'LookupProvider', 'LookupListener', 'LookupEvent',
+
     '__title__', '__summary__', '__uri__', '__version__',
     '__author__', '__email__', '__license__', '__copyright__',
 ]
