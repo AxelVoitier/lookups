@@ -20,7 +20,7 @@ def check_all_instances(all_instances):
     assert len(all_instances) == 0
 
 
-def test_instanciation():
+def test_instantiation():
     assert EmptyLookup()
 
 
