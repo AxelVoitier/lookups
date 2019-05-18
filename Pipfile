@@ -10,7 +10,6 @@ mypy = "*"
 flake8-mypy = "*"
 
 [packages]
-typing-extensions = "*"
 
 [scripts]
 qa = 'flake8'
