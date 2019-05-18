@@ -8,10 +8,12 @@ pytest = "*"
 flake8 = "*"
 mypy = "*"
 flake8-mypy = "*"
+check-manifest = "*"
 
 [packages]
 
 [scripts]
 qa = 'flake8'
 tests = 'py.test -x tests'
+build = 'python setup.py sdist bdist_wheel'
 clean = 'rm -Rf build dist lookups.egg-info .pytest_cache'
