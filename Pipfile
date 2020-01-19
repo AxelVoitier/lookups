@@ -8,7 +8,6 @@ pytest = "*"
 pytest-cov = "*"
 flake8 = "*"
 mypy = "*"
-flake8-mypy = "*"
 check-manifest = "*"
 
 [packages]
