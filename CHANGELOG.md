@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.2.0 - XX XXXX 2020
+--------------------
+
+- Follows PEP 561 for packages providing typing information.
+
 0.1.0 - 18 May 2019
 -------------------
 

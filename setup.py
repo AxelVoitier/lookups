@@ -73,6 +73,9 @@ setup_args = dict(
     tests_require=pipfile_requirements('develop'),
     python_requires='~=3.7',
 
+    # Additional files
+    package_data=dict(lookups=['py.typed']),
+
     # Classifiers and Keywords
     classifiers=(  # https://pypi.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 3 - Alpha',
@@ -85,6 +88,9 @@ setup_args = dict(
         'Typing :: Typed',
     ),
     keywords='lookup lookups dci',
+
+    # Other options
+    zip_safe=False,  # Because mypy cannot analyse a zip
 )
 
 if __name__ == '__main__':
