@@ -84,7 +84,7 @@ class LookupItem(Item):
         return self._instance
 
     def get_type(self) -> Type[object]:
-        return self._instance.__class__
+        return type(self._instance)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, type(self)):

@@ -87,7 +87,7 @@ def check_item(expected, item):
 
     assert item.get_instance() is expected
 
-    assert item.get_type() is type(expected)
+    assert issubclass(item.get_type(), type(expected))
 
 
 def test_instantiation():

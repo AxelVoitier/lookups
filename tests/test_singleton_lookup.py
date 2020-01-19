@@ -63,7 +63,7 @@ def check_item(member, id_, item):
 
     assert item.get_instance() is member
 
-    assert item.get_type() is type(member)
+    assert issubclass(item.get_type(), type(member))
 
 
 def test_instantiation():
