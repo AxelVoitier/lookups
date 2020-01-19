@@ -67,7 +67,9 @@ setup_args = dict(
 
     # Code and dependencies
     packages=setuptools.find_packages(exclude=['tests']),
-    install_requires=pipfile_requirements('default'),  # , with_version=True),
+    # install_requires=pipfile_requirements('default'),  # , with_version=True),
+    install_requires=[
+    ],
     tests_require=pipfile_requirements('develop'),
     python_requires='~=3.7',
 

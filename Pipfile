@@ -11,6 +11,7 @@ mypy = "*"
 check-manifest = "*"
 
 [packages]
+lookups = {editable = true,path = "."}
 
 [scripts]
 qa = 'flake8'
