@@ -87,7 +87,7 @@ class LookupItem(Item):
         return self._instance.__class__
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Item):
+        if isinstance(other, type(self)):
             return self._instance == other.get_instance()
         else:
             return False
