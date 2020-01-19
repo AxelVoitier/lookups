@@ -9,7 +9,7 @@ from __future__ import annotations  # noqa: T484
 # System imports
 import logging
 from abc import ABC, abstractmethod
-from typing import Sequence, AbstractSet, Type, Optional
+from typing import Sequence, AbstractSet, Type, Optional, Callable
 
 # Third-party imports
 
@@ -158,7 +158,7 @@ class Result(ABC):
     '''
 
     @abstractmethod
-    def add_lookup_listener(self, listener: LookupListener) -> None:
+    def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
         '''
         Registers a listener that is invoked when there is a possible change in this result.
 
@@ -172,7 +172,7 @@ class Result(ABC):
         '''
 
     @abstractmethod
-    def remove_lookup_listener(self, listener: LookupListener) -> None:
+    def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
         '''
         Unregisters a listener previously added.
 
@@ -222,33 +222,3 @@ class LookupProvider(ABC):
 
         :return: Fully initialized lookup instance provided by this object
         '''
-
-
-class LookupListener(ABC):
-    '''
-    General listener for changes in lookup.
-    '''
-
-    @abstractmethod
-    def result_changed(self, event: LookupEvent) -> None:
-        '''
-        A change in lookup occured.
-
-        Please note that this method should never block since it might be called from lookup
-        implementation internal threads. If you block here you are in risk that the thread you wait
-        for might in turn wait for the lookup internal thread to finish its work.
-
-        :param event: Event describing the change.
-        '''
-
-
-class LookupEvent(object):
-    '''
-    An event describing the change in the lookup's result.
-    '''
-
-    def __init__(self, source: Result) -> None:
-        '''
-        :param source: The lookup result which has changed.
-        '''
-        self.source = source

@@ -130,8 +130,6 @@ def test_lookup_result(members, search, expected):
     result = lookup.lookup_result(search)
     assert result
 
-    # TODO: Test listener
-
     all_classes = result.all_classes()
     assert isinstance(all_classes, Set)
     assert not isinstance(all_classes, MutableSet)
@@ -148,3 +146,16 @@ def test_lookup_result(members, search, expected):
     for item, instance, again in zip(all_items, expected, result.all_items()):
         check_item(instance, item)
         assert item == again
+
+
+@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
+def test_listeners(members, search, expected):
+    lookup = fixed(*members)
+
+    result = lookup.lookup_result(search)
+
+    def call_me_back(result):
+        pass
+
+    result.add_lookup_listener(call_me_back)
+    result.remove_lookup_listener(call_me_back)

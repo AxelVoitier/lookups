@@ -9,13 +9,13 @@ Static factory methods for creating common lookup implementations.
 '''
 
 # System imports
-from typing import Sequence, AbstractSet, Type, Optional
+from typing import Sequence, AbstractSet, Type, Optional, Callable
 
 # Third-party imports
 
 # Local imports
 from . import singleton as singleton_module, simple
-from .lookup import Lookup, Item, Result, LookupListener
+from .lookup import Lookup, Item, Result
 
 
 def singleton(member: object, id_: str = None) -> Lookup:
@@ -35,10 +35,10 @@ def fixed(*members: object) -> Lookup:
 
 class NoResult(Result):
 
-    def add_lookup_listener(self, listener: LookupListener) -> None:
+    def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
         pass
 
-    def remove_lookup_listener(self, listener: LookupListener) -> None:
+    def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
         pass
 
     def all_classes(self) -> AbstractSet[Type[object]]:

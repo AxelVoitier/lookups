@@ -100,8 +100,6 @@ def test_lookup_result(member, id_, search):
     result = lookup.lookup_result(search)
     assert result
 
-    # TODO: Test listener
-
     all_classes = result.all_classes()
     assert isinstance(all_classes, Set)
     assert not isinstance(all_classes, MutableSet)
@@ -117,3 +115,16 @@ def test_lookup_result(member, id_, search):
     assert len(all_items) == 1
     check_item(member, id_, all_items[0])
     assert all_items[0] == lookup.lookup_item(search)
+
+
+@pytest.mark.parametrize('member, id_, search', MEMBER_FIXTURES)
+def test_listeners(member, id_, search):
+    lookup = singleton(member, id_)
+
+    result = lookup.lookup_result(search)
+
+    def call_me_back(result):
+        pass
+
+    result.add_lookup_listener(call_me_back)
+    result.remove_lookup_listener(call_me_back)

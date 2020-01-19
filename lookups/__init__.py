@@ -12,7 +12,7 @@
 # Local imports
 from .lookup import (
     Lookup, Result, Item,
-    LookupProvider, LookupListener, LookupEvent
+    LookupProvider,
 )
 from .lookups import singleton, fixed
 from .__about__ import (
@@ -22,7 +22,7 @@ from .__about__ import (
 
 __all__ = [
     'Lookup', 'Result', 'Item',
-    'LookupProvider', 'LookupListener', 'LookupEvent',
+    'LookupProvider',
     'singleton', 'fixed',
 
     '__title__', '__summary__', '__uri__', '__version__',

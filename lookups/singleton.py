@@ -6,13 +6,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # System imports
-from typing import Sequence, AbstractSet, Type, Optional
+from typing import Sequence, AbstractSet, Type, Optional, Callable
 
 # Third-party imports
 
 # Local imports
 from . import lookups
-from .lookup import Lookup, Result, Item, LookupListener
+from .lookup import Lookup, Result, Item
 
 
 class SingletonLookup(Lookup):
@@ -65,10 +65,10 @@ class SingletonResult(Result):
     def __init__(self, item: Item) -> None:
         self._item = item
 
-    def add_lookup_listener(self, listener: LookupListener) -> None:
+    def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
         pass
 
-    def remove_lookup_listener(self, listener: LookupListener) -> None:
+    def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
         pass
 
     def all_classes(self) -> AbstractSet[Type[object]]:

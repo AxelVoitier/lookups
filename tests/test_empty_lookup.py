@@ -49,8 +49,6 @@ def test_lookup_result():
     result = lookup.lookup_result(object)
     assert result
 
-    # TODO: Test listener
-
     all_classes = result.all_classes()
     assert isinstance(all_classes, Set)
     assert not isinstance(all_classes, MutableSet)
@@ -63,3 +61,15 @@ def test_lookup_result():
     assert isinstance(all_items, Sequence)
     assert not isinstance(all_items, MutableSequence)
     assert len(all_items) == 0
+
+
+def test_listeners():
+    lookup = EmptyLookup()
+
+    result = lookup.lookup_result(object)
+
+    def call_me_back(result):
+        pass
+
+    result.add_lookup_listener(call_me_back)
+    result.remove_lookup_listener(call_me_back)
