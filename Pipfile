@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 pytest = "*"
+pytest-cov = "*"
 flake8 = "*"
 mypy = "*"
 flake8-mypy = "*"
@@ -14,6 +15,6 @@ check-manifest = "*"
 
 [scripts]
 qa = 'flake8'
-tests = 'py.test -x tests'
+tests = 'py.test --cov=lookups --cov-report=term-missing -x tests'
 build = 'python setup.py sdist bdist_wheel'
 clean = 'rm -Rf build dist lookups.egg-info .pytest_cache'
