@@ -13,6 +13,6 @@ Please, add yourself when you contribute!
 Original Netbeans authors of Lookup API
 =======================================
 
-* Jaroslav Tulach - Lookup API
+* Jaroslav Tulach - Lookup API, AbstractLookup, InstanceContent, ArrayStorage
 * Marian Petras - Singleton lookup
 * David Strupl - Common lookup implementations

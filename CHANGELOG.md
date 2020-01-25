@@ -4,6 +4,8 @@ CHANGELOG
 0.2.0 - XX XXXX 2020
 --------------------
 
+- Provides GenericLookup and InstanceContent, based on SetStorage. These are the first dynamic
+  lookups. They are based on Netbeans' AbstractLookup, InstanceContent and ArrayStorage.
 - Lookup listeners are just simple callables now.
 - Follows PEP 561 for packages providing typing information.
 

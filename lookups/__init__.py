@@ -15,6 +15,8 @@ from .lookup import (
     LookupProvider,
 )
 from .lookups import singleton, fixed
+from .generic_lookup import GenericLookup, AbstractLookup
+from .instance_content import InstanceContent, Convertor
 from .__about__ import (
     __title__, __summary__, __uri__, __version__,
     __author__, __email__, __license__, __copyright__,
@@ -23,6 +25,7 @@ from .__about__ import (
 __all__ = [
     'Lookup', 'Result', 'Item',
     'LookupProvider',
+    'GenericLookup', 'AbstractLookup', 'InstanceContent', 'Convertor',
     'singleton', 'fixed',
 
     '__title__', '__summary__', '__uri__', '__version__',

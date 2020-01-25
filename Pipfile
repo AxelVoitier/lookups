@@ -14,7 +14,9 @@ check-manifest = "*"
 lookups = {editable = true,path = "."}
 
 [scripts]
-qa = 'flake8'
+style = 'flake8'
+typing = 'mypy lookups'
 tests = 'py.test --cov=lookups --cov-report=term-missing -x tests'
 build = 'python setup.py sdist bdist_wheel'
 clean = 'rm -Rf build dist lookups.egg-info .pytest_cache'
+atom = 'atom'
