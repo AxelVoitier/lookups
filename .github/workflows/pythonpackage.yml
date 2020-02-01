@@ -31,6 +31,4 @@ jobs:
         pipenv run typing
     - name: Test with pytest
       run: |
-        # Re-install pytest for python<3.8 that also need importlib-metadata (Pipfile.lock don't capture that...)
-        pip install pytest
         pipenv run tests

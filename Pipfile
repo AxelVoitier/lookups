@@ -9,6 +9,7 @@ pytest-cov = "*"
 flake8 = "*"
 mypy = "*"
 check-manifest = "*"
+importlib-metadata = "*"
 
 [packages]
 lookups = {editable = true,path = "."}
