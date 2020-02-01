@@ -39,7 +39,10 @@ class Lookup(ABC):
         :return: The global lookup in the system
         :rtype: Lookup
         '''
-        return None
+        # Temporary solution
+        from .generic_lookup import GenericLookup
+        from .instance_content import InstanceContent
+        return GenericLookup(InstanceContent())
 
     @abstractmethod
     def lookup(self, cls: Type[object]) -> Optional[object]:
