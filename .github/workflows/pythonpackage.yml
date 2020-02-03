@@ -32,3 +32,7 @@ jobs:
     - name: Test with pytest
       run: |
         pipenv run tests
+    - name: Codecov
+      run : |
+        pip install codecov
+        codecov --token=99632c2b-7e43-449a-a0cc-0cc9fa190c4b
