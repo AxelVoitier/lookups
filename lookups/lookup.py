@@ -167,7 +167,7 @@ class Result(ABC):
 
         LookupListener protocol is to implement the following method:
 
-            def result_changed(self, event: LookupEvent) -> None: ...
+            def result_changed(self, result: Result) -> None: ...
 
         Remember to keep a strong reference to the object you are attaching listener to.
 
