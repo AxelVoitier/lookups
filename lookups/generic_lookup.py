@@ -66,24 +66,24 @@ class GenericLookup(Lookup):
                 self._storage = SetStorage()
                 self._initialise()
 
-            if self._storage_is_used:
-                raise RuntimeError('You are trying to modify a lookup from a lookup query!')
-            self._storage_is_used = True
-
-            try:
-                yield self._storage
-            finally:
-                # Exit storage
-                self._storage_is_used = False
+            yield self._storage
 
     @contextmanager
     def _storage_for_modification(
             self, ensure: int, notify_in: Executor = None) -> Iterator[Transaction]:
 
         with self._storage_for_lookup() as storage:
-            transaction = storage.begin_transaction(ensure)
-            yield transaction
-            to_notify = storage.end_transaction(transaction)
+            if self._storage_is_used:
+                raise RuntimeError('You are trying to modify a lookup from a lookup query!')
+            self._storage_is_used = True
+
+            try:
+                transaction = storage.begin_transaction(ensure)
+                yield transaction
+                to_notify = storage.end_transaction(transaction)
+            finally:
+                # Exit storage
+                self._storage_is_used = False
 
             self._notify_in(notify_in, to_notify)
 
