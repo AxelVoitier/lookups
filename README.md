@@ -66,9 +66,11 @@ all_children_matches = my_lookup.lookup_all(ChildClass)
 
 # lookup_result(cls): get a Result object for the searched class
 parent_result = my_lookup.lookup_result(ParentClass)
-# all_instances(): all instances corresponding to the searched class (ie. similar to plain lookup_all())
+# all_instances(): all instances corresponding to the searched
+#     class (ie. similar to plain lookup_all())
 parent_result.all_instances()
-# all_classes(): Immutable set of all types in the result. Here it would be set(ParentClass, ChildClass)
+# all_classes(): Immutable set of all types in the result.
+#     Here it would be set(ParentClass, ChildClass)
 parent_result.all_classes()
 
 # Lookup result listener
