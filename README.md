@@ -35,7 +35,7 @@ It comes in two main parts:
 from lookups import InstanceContent, GenericLookup
 
 my_content = InstanceContent()
-my_lookup = GenericLookup(content)
+my_lookup = GenericLookup(my_content)
 
 # Adds some objects
 class ParentClass:
@@ -45,10 +45,11 @@ class ChildClass(ParentClass):
     pass
 
 parent = ParentClass()
-my_content.add(an_object)
+my_content.add(parent)
 child1 = ChildClass()
+my_content.add(child1)
 child2 = ChildClass()
-my_content.set([child1, child2])
+my_content.add(child2)
 
 ...
 
