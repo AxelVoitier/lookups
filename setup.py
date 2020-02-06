@@ -79,7 +79,7 @@ setup_args = dict(
 
     # Classifiers and Keywords
     classifiers=(  # https://pypi.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Object Brokering',

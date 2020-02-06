@@ -20,7 +20,7 @@ __title__ = 'lookups'
 __summary__ = 'DCI lookups in Python (inspired by Netbeans Platform Lookups API)'
 __uri__ = 'https://github.com/AxelVoitier/lookups'
 
-__version__ = '0.2.0-dev'
+__version__ = '0.2.0'
 
 __author__ = 'Axel Voitier'
 __email__ = 'axel.voitier@gmail.com'
