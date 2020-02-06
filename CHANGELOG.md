@@ -1,8 +1,11 @@
 CHANGELOG
 =========
 
+0.3.0 - XX XXXXXXXX 2020
+------------------------
+
 0.2.0 - 06 February 2020
---------------------
+------------------------
 
 - Provides GenericLookup and InstanceContent, based on SetStorage. These are the first dynamic
   lookups. They are based on Netbeans' AbstractLookup, InstanceContent and ArrayStorage.
