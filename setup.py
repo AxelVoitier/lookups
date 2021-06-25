@@ -70,6 +70,7 @@ setup_args = dict(
     # install_requires=pipfile_requirements('default'),  # , with_version=True),
     install_requires=[
         'observable',
+        'typing_extensions',
     ],
     tests_require=pipfile_requirements('develop'),
     python_requires='~=3.7',
@@ -78,7 +79,7 @@ setup_args = dict(
     package_data=dict(lookups=['py.typed']),
 
     # Classifiers and Keywords
-    classifiers=(  # https://pypi.org/pypi?%3Aaction=list_classifiers
+    classifiers=[  # https://pypi.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries :: Python Modules',
@@ -88,7 +89,7 @@ setup_args = dict(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Typing :: Typed',
-    ),
+    ],
     keywords='lookup lookups dci',
 
     # Other options
