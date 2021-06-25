@@ -15,6 +15,7 @@ from .lookup import (
     LookupProvider,
 )
 from .lookups import singleton, fixed
+from .simple import SimpleLookup
 from .generic_lookup import GenericLookup, AbstractLookup
 from .instance_content import InstanceContent, Convertor
 from .__about__ import (
