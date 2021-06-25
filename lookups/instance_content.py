@@ -92,6 +92,9 @@ class InstanceContent(Content):
 
         self._set_pairs(pairs)
 
+    def __contains__(self, item):
+        return super().__contains__(SimpleItem(item))
+
 
 class Convertor(ABC):
     '''Convertor postpones an instantiation of an object.'''

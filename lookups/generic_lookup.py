@@ -8,6 +8,7 @@ from __future__ import annotations  # noqa: F407
 
 # System imports
 from abc import ABC, abstractmethod
+from collections.abc import Container
 from concurrent.futures import Executor
 from contextlib import contextmanager
 from threading import RLock
@@ -250,7 +251,7 @@ class GLResult(Result):
         return f'{self.__class__.__name__}({self._lookup!r}, {self._cls!r})'
 
 
-class Content:
+class Content(Container):
     '''
     A class that can be used by the creator of the GenericLookup to control its content (a kind of
     Privileged API giving creator of the lookup more rights than subsequent users of the lookup).
@@ -326,8 +327,15 @@ class Content:
         else:
             self._early_pairs = list(pairs)
 
+    def __contains__(self, item):
+        if self._abstract_lookup:
+            with self._abstract_lookup._storage_for_lookup() as storage:
+                return item in storage
+        else:
+            return item in self._early_pairs
 
-class Storage(ABC):
+
+class Storage(ABC, Container):
     '''Storage to keep the internal structure of Pairs and to answer different queries.'''
 
     @abstractmethod
