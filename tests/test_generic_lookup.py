@@ -393,6 +393,114 @@ def test_listener(members, search, expected):
     # Removing listener and adding/removing members
 
     result.remove_lookup_listener(call_me_back)
+    # del call_me_back
+
+    for member in members:
+        print('Adding', member)
+        content.add(member)
+        assert called_with is None
+
+        print('Removing', member)
+        try:
+            content.remove(member)
+        except KeyError:
+            continue
+        else:
+            assert called_with is None
+
+    # Test again, this time deleting the listener
+
+    result.add_lookup_listener(call_me_back)
+    del call_me_back
+
+    for member in members:
+        print('Adding', member)
+        content.add(member)
+        assert called_with is None
+
+        print('Removing', member)
+        try:
+            content.remove(member)
+        except KeyError:
+            continue
+        else:
+            assert called_with is None
+
+
+@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
+def test_bound_method_listener(members, search, expected):
+    print(members, search, expected)
+    expected = list(expected) if expected is not None else []
+    content, lookup = setup_lookup([])
+
+    result = lookup.lookup_result(search)
+    assert not result.all_items()
+
+    class ToCall:
+
+        def call_me_back(self, result):
+            nonlocal called_with
+            called_with = result
+            print('Got called', result)
+
+    to_call = ToCall()
+    called_with = None
+    result.add_lookup_listener(to_call.call_me_back)
+
+    # Adding members
+
+    for member in members:
+        print('Adding', member)
+        added = content.add(member)
+        if member in expected:
+            if added:
+                assert called_with
+                assert member in result.all_instances()
+                assert member in called_with.all_instances()
+                called_with = None
+            else:
+                assert called_with is None
+                assert member in result.all_instances()
+        else:
+            assert called_with is None
+
+    # Removing members
+
+    for member in members:
+        print('Removing', member)
+        try:
+            content.remove(member)
+        except KeyError:
+            continue
+        else:
+            if member in expected:
+                assert called_with
+                assert member not in result.all_instances()
+                assert member not in called_with.all_instances()
+                called_with = None
+            else:
+                assert called_with is None
+
+    # Removing listener and adding/removing members
+
+    result.remove_lookup_listener(to_call.call_me_back)
+
+    for member in members:
+        print('Adding', member)
+        content.add(member)
+        assert called_with is None
+
+        print('Removing', member)
+        try:
+            content.remove(member)
+        except KeyError:
+            continue
+        else:
+            assert called_with is None
+
+    # Test again, this time deleting the listener object
+
+    del to_call
 
     for member in members:
         print('Adding', member)
