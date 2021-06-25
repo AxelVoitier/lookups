@@ -57,6 +57,9 @@ class Lookup(ABC):
         :return: An object implementing the given type or None if no such implementation is found.
         '''
 
+    def __call__(self, cls: Type[object]) -> Optional[object]:
+        return self.lookup(cls)
+
     @abstractmethod
     def lookup_result(self, cls: Type[object]) -> Result:
         '''
