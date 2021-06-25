@@ -1,8 +1,16 @@
 CHANGELOG
 =========
 
-0.3.0 - XX XXXXXXXX 2020
+0.3.0 - XX XXXXXXXX 2021
 ------------------------
+
+- Fixes issue with listeners registration disappearing immediately when using object-bound methods.
+- Content of a GenericLookup can now behave like a Container (ie. you can do things like "obj in content").
+- When an instance is not hashable, provides an alternative using id() of the object in order to be
+  able to store it in a hash-based storage (set, dictionary).
+- New syntactic sugar: call directly a lookup object as shortcut for the lookup method. Ie.,
+  instead of writing "lookup.lookup(...)" you can now write "lookup(...)".
+- Missing declared dependency in typing_extensions.
 
 0.2.0 - 06 February 2020
 ------------------------
