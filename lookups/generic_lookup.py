@@ -184,7 +184,6 @@ class GLResult(Result):
     def __init__(self, lookup: GenericLookup, cls: Type[object]) -> None:
         self._lookup = lookup
         self._cls = cls
-        self._listeners = None
 
         self._classes_cache: Optional[AbstractSet[Type[object]]] = None
         self._items_cache: Optional[Sequence[Item]] = None
@@ -225,7 +224,6 @@ class GLResult(Result):
         instances = tuple([
             item.get_instance()
             for item in self._all_items_without_before_lookup()
-            if issubclass(item.get_type(), self._cls)
         ])
 
         self._instances_cache = instances
