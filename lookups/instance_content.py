@@ -200,4 +200,7 @@ class ConvertingItem(Pair):
             return False
 
     def __hash__(self) -> int:
-        return hash(self._key)
+        try:
+            return hash(self._key)
+        except TypeError:  # Mutable, cannot be hashed
+            return id(self._key)

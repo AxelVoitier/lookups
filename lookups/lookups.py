@@ -93,4 +93,7 @@ class LookupItem(Item):
             return False
 
     def __hash__(self) -> int:
-        return hash(self._instance)
+        try:
+            return hash(self._instance)
+        except TypeError:  # Mutable, cannot be hashed
+            return id(self._instance)
