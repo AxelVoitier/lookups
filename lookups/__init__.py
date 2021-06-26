@@ -27,6 +27,7 @@ __all__ = [
     'Lookup', 'Result', 'Item',
     'LookupProvider',
     'GenericLookup', 'AbstractLookup', 'InstanceContent', 'Convertor',
+    'SimpleLookup',
     'singleton', 'fixed',
 
     '__title__', '__summary__', '__uri__', '__version__',
