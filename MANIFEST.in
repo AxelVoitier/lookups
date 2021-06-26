@@ -1,3 +1,2 @@
 include *.md LICENSE
-include Pipfile Pipfile.lock
 recursive-include tests *.py
