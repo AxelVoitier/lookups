@@ -21,7 +21,7 @@ __all__ = [
     '__author__', '__email__', '__license__', '__copyright__',
 ]
 
-mtdt = metadata.metadata('lookups')
+mtdt = metadata.metadata('lookups')  # type: ignore
 
 __title__ = mtdt['Name']
 __summary__ = mtdt['Summary']
