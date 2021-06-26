@@ -92,7 +92,7 @@ class InstanceContent(Content):
 
         self._set_pairs(pairs)
 
-    def __contains__(self, item):
+    def __contains__(self, item: object) -> bool:
         return super().__contains__(SimpleItem(item))
 
 

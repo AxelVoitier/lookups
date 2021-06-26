@@ -325,7 +325,7 @@ class Content(Container):
         else:
             self._early_pairs = list(pairs)
 
-    def __contains__(self, item):
+    def __contains__(self, item: object) -> bool:
         if self._abstract_lookup:
             with self._abstract_lookup._storage_for_lookup() as storage:
                 return item in storage

@@ -51,7 +51,7 @@ class SetStorage(GL.Storage):
     def find_result(self, cls: Type[object]) -> Optional[GL.GLResult]:
         return self._results.get(cls, None)
 
-    def __contains__(self, item):
+    def __contains__(self, item: object) -> bool:
         return item in self._content
 
 

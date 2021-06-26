@@ -8,7 +8,7 @@
 # System imports
 import typing as T
 from types import MethodType
-from weakref import WeakKeyDictionary, WeakMethod, ref
+from weakref import WeakKeyDictionary, WeakMethod, ref, ReferenceType
 
 # Third-party imports
 from observable import Observable, EventNotFound, HandlerNotFound
@@ -22,8 +22,7 @@ class WeakObservable(Observable):
 
     def __init__(self) -> None:
         super().__init__()
-        self._events: WeakKeyDictionary[
-            T.Any, T.List[T.Union[ref, WeakMethod]]] = WeakKeyDictionary()
+        self._events: WeakKeyDictionary[T.Any, T.List[ReferenceType]] = WeakKeyDictionary()
 
     def on(  # pylint: disable=invalid-name
         self, event: T.Any, *handlers: T.Callable
@@ -47,7 +46,7 @@ class WeakObservable(Observable):
         return _on_wrapper
 
     def off(  # pylint: disable=keyword-arg-before-vararg
-            self, event: str = None, *handlers: T.Callable
+            self, event: T.Any = None, *handlers: T.Callable
     ) -> None:
         """Unregisters a whole event (if no handlers are given) or one
         or more handlers from an event.
@@ -66,6 +65,7 @@ class WeakObservable(Observable):
             return
 
         for callback in handlers:
+            callback_ref: ReferenceType
             if isinstance(callback, MethodType):
                 callback_ref = WeakMethod(callback)
             else:
@@ -78,7 +78,7 @@ class WeakObservable(Observable):
                 self._events[event].remove(callback_ref)
         return
 
-    def trigger(self, event: str, *args: T.Any, **kw: T.Any) -> bool:
+    def trigger(self, event: T.Any, *args: T.Any, **kw: T.Any) -> bool:
         """Triggers all handlers which are subscribed to an event.
         Returns True when there were callbacks to execute, False otherwise."""
 
