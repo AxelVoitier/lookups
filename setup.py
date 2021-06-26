@@ -78,6 +78,14 @@ setup_args = dict(
     # Additional files
     package_data=dict(lookups=['py.typed']),
 
+    # Entry points
+    entry_points=dict(
+        lookup_provider=[
+            'test = blah'
+        ],
+        lookup_default=[about['__version__'] + ' = lookups'],
+    ),
+
     # Classifiers and Keywords
     classifiers=[  # https://pypi.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 4 - Beta',
@@ -86,8 +94,9 @@ setup_args = dict(
         'Topic :: Software Development :: Object Brokering',
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.7',  # EOL: 2023/06/27
+        'Programming Language :: Python :: 3.8',  # EOL: 2024/10/14
+        'Programming Language :: Python :: 3.9',  # EOL: 2025/10/05
         'Typing :: Typed',
     ],
     keywords='lookup lookups dci',
