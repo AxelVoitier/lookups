@@ -56,6 +56,7 @@ class Lookup(ABC):
         :param cls: Class or type of the object we are searching for.
         :return: An object implementing the given type or None if no such implementation is found.
         '''
+        raise NotImplementedError()
 
     def __call__(self, cls: Type[object]) -> Optional[object]:
         return self.lookup(cls)
@@ -71,6 +72,7 @@ class Lookup(ABC):
         :param cls: Class or type of the objects we are searching for.
         :return: A live object representing instances of that type.
         '''
+        raise NotImplementedError()
 
     def lookup_item(self, cls: Type[object]) -> Optional[Item]:
         '''
@@ -119,6 +121,7 @@ class Item(ABC):
 
         :return: The string suitable for presenting the object to a user.
         '''
+        raise NotImplementedError()
 
     @abstractmethod
     def get_id(self) -> str:
@@ -132,6 +135,7 @@ class Item(ABC):
 
         :return: A string ID of the item.
         '''
+        raise NotImplementedError()
 
     @abstractmethod
     def get_instance(self) -> Optional[object]:
@@ -140,6 +144,7 @@ class Item(ABC):
 
         :return: The instance or None if the instance cannot be created.
         '''
+        raise NotImplementedError()
 
     @abstractmethod
     def get_type(self) -> Type[object]:
@@ -148,6 +153,7 @@ class Item(ABC):
 
         :return: The class of the item.
         '''
+        raise NotImplementedError()
 
     def __str__(self) -> str:
         '''Show ID for debugging.'''
@@ -176,6 +182,7 @@ class Result(ABC):
 
         :param listener: The listener to add.
         '''
+        raise NotImplementedError()
 
     @abstractmethod
     def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
@@ -184,6 +191,7 @@ class Result(ABC):
 
         :param listener: The listener to remove.
         '''
+        raise NotImplementedError()
 
     @abstractmethod
     def all_classes(self) -> AbstractSet[Type[object]]:
@@ -195,6 +203,7 @@ class Result(ABC):
 
         :return: Immutable set of class objects.
         '''
+        raise NotImplementedError()
 
     @abstractmethod
     def all_instances(self) -> Sequence[object]:
@@ -203,6 +212,7 @@ class Result(ABC):
 
         :return: Immutable sequence of all instances.
         '''
+        raise NotImplementedError()
 
     @abstractmethod
     def all_items(self) -> Sequence[Item]:
@@ -213,6 +223,7 @@ class Result(ABC):
 
         :return: Immutable sequence of Item.
         '''
+        raise NotImplementedError()
 
 
 class LookupProvider(ABC):
@@ -228,3 +239,4 @@ class LookupProvider(ABC):
 
         :return: Fully initialized lookup instance provided by this object
         '''
+        raise NotImplementedError()
