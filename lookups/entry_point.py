@@ -41,7 +41,7 @@ class EntryPointLookup(SimpleLookup):
 
         :param group: Entry-point group to load instances from.
         '''
-        eps = metadata.entry_points()
+        eps = metadata.entry_points()  # type: ignore
         try:
             group_eps = eps[group]
         except KeyError:
