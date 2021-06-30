@@ -4,6 +4,7 @@ CHANGELOG
 0.3.0 - XX XXXXXXXX 2021
 ------------------------
 
+- Adds a EntryPointLookup.
 - Fixes issue with listeners registration disappearing immediately when using object-bound methods.
 - Content of a GenericLookup can now behave like a Container (ie. you can do things like "obj in content").
 - When an instance is not hashable, provides an alternative using id() of the object in order to be
