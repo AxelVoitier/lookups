@@ -6,6 +6,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # System imports
+import gc
 from collections.abc import Sequence, MutableSequence, Set, MutableSet
 
 # Third-party imports
@@ -73,3 +74,7 @@ def test_listeners():
 
     result.add_lookup_listener(call_me_back)
     result.remove_lookup_listener(call_me_back)
+
+    result.add_lookup_listener(call_me_back)
+    del call_me_back
+    gc.collect()
