@@ -11,9 +11,47 @@ from types import MethodType
 from weakref import WeakKeyDictionary, WeakMethod, ref, ReferenceType
 
 # Third-party imports
-from observable import Observable, EventNotFound, HandlerNotFound
+from observable import Observable
 
 # Local imports
+
+
+class WeakCallable:
+
+    def __init__(self, callable: T.Callable, callback: T.Optional[T.Callable] = None) -> None:
+        self._ref: ReferenceType
+        if isinstance(callable, MethodType):
+            self._ref = WeakMethod(callable, callback)
+        else:
+            self._ref = ref(callable, callback)
+
+    def __call__(self, *args: T.Any, **kwargs: T.Any) -> T.Any:
+        callable = self._ref()
+        if callable is not None:
+            return callable(*args, **kwargs)
+
+    @property
+    def ref(self) -> T.Any:
+        return self._ref()
+
+    def __eq__(self, other: T.Any) -> bool:
+        if isinstance(other, WeakCallable):
+            return self._ref.__eq__(other._ref)
+        elif isinstance(other, ref):
+            return self._ref.__eq__(other)
+        else:
+            return self._ref.__eq__(WeakCallable(other)._ref)
+
+    def __ne__(self, other: T.Any) -> bool:
+        if isinstance(other, WeakCallable):
+            return self._ref.__ne__(other._ref)
+        elif isinstance(other, ref):
+            return self._ref.__ne__(other)
+        else:
+            return self._ref.__ne__(WeakCallable(other)._ref)
+
+    def __hash__(self) -> int:
+        return hash(self._ref)
 
 
 class WeakObservable(Observable):
@@ -22,7 +60,7 @@ class WeakObservable(Observable):
 
     def __init__(self) -> None:
         super().__init__()
-        self._events: WeakKeyDictionary[T.Any, T.List[ReferenceType]] = WeakKeyDictionary()
+        self._events: WeakKeyDictionary[T.Any, T.List[WeakCallable]] = WeakKeyDictionary()
 
     def on(  # pylint: disable=invalid-name
         self, event: T.Any, *handlers: T.Callable
@@ -35,61 +73,9 @@ class WeakObservable(Observable):
             if event not in self._events:
                 self._events[event] = []
             for handler in handlers:
-                if isinstance(handler, MethodType):
-                    self._events[event].append(WeakMethod(handler))
-                else:
-                    self._events[event].append(ref(handler))
+                self._events[event].append(WeakCallable(handler, self._events[event].remove))
             return handlers[0]
 
         if handlers:
             return _on_wrapper(*handlers)
         return _on_wrapper
-
-    def off(  # pylint: disable=keyword-arg-before-vararg
-            self, event: T.Any = None, *handlers: T.Callable
-    ) -> None:
-        """Unregisters a whole event (if no handlers are given) or one
-        or more handlers from an event.
-        Raises EventNotFound when the given event isn't registered.
-        Raises HandlerNotFound when a given handler isn't registered."""
-
-        if not event:
-            self._events.clear()
-            return
-
-        if event not in self._events:
-            raise EventNotFound(event)
-
-        if not handlers:
-            self._events.pop(event)
-            return
-
-        for callback in handlers:
-            callback_ref: ReferenceType
-            if isinstance(callback, MethodType):
-                callback_ref = WeakMethod(callback)
-            else:
-                callback_ref = ref(callback)
-
-            if callback_ref not in self._events[event]:
-                raise HandlerNotFound(event, callback)
-
-            while callback_ref in self._events[event]:
-                self._events[event].remove(callback_ref)
-        return
-
-    def trigger(self, event: T.Any, *args: T.Any, **kw: T.Any) -> bool:
-        """Triggers all handlers which are subscribed to an event.
-        Returns True when there were callbacks to execute, False otherwise."""
-
-        callbacks = list(self._events.get(event, []))
-        if not callbacks:
-            return False
-
-        for callback_ref in callbacks:
-            callback = callback_ref()
-            if callback is not None:
-                callback(*args, **kw)
-            else:
-                callbacks.remove(callback_ref)
-        return True
