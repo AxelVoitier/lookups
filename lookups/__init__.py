@@ -18,6 +18,7 @@ from .lookups import singleton, fixed
 from .simple import SimpleLookup
 from .generic_lookup import GenericLookup, AbstractLookup
 from .instance_content import InstanceContent, Convertor
+from .delegated_lookup import DelegatedLookup
 from .entry_point import EntryPointLookup
 from .__about__ import (
     __title__, __summary__, __uri__, __version__,
@@ -30,7 +31,7 @@ __all__ = [
     'GenericLookup', 'AbstractLookup', 'InstanceContent', 'Convertor',
     'SimpleLookup',
     'singleton', 'fixed',
-    'EntryPointLookup',
+    'DelegatedLookup', 'EntryPointLookup',
 
     '__title__', '__summary__', '__uri__', '__version__',
     '__author__', '__email__', '__license__', '__copyright__',

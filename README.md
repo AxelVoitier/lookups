@@ -94,3 +94,4 @@ my_content.remove(child1)
 * `lookups.fixed`: Simple unmodifiable lookup. Content is set at creation time.
 * `lookups.singleton`: Unmodifiable lookup that contains just one fixed object.
 * `lookups.EmptyLookup`: A lookup containing nothing.
+* `lookups.DelegatedLookup`: A lookup that redirects to another (dynamic) lookup, through a LookupProvider.
