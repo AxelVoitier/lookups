@@ -31,14 +31,14 @@ Patch Requirements
 * A patch should be a minimal and accurate answer to exactly one identified problem.
 * A patch must adhere to a typical code-style enforced with Flake8 for instance.
 ```
-    $ pipenv install --dev
-    $ pipenv run qa
+    $ make install
+    $ make style
 ```
 
 * A patch must pass the tests on at least principle target platforms.
 ```
-    $ pipenv install --dev
-    $ pipenv run tests
+    $ make install
+    $ make tests
 ```
 
 * A patch commit message should consist of a single short (less than 50 character) line summarizing

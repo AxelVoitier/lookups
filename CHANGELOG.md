@@ -13,6 +13,7 @@ CHANGELOG
 - New syntactic sugar: call directly a lookup object as shortcut for the lookup method. Ie.,
   instead of writing "lookup.lookup(...)" you can now write "lookup(...)".
 - Missing declared dependency in typing_extensions.
+- Abstract methods now raise NotImplementedError
 
 0.2.0 - 06 February 2020
 ------------------------
