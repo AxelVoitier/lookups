@@ -393,7 +393,6 @@ def test_listener(members, search, expected):
     # Removing listener and adding/removing members
 
     result.remove_lookup_listener(call_me_back)
-    # del call_me_back
 
     for member in members:
         print('Adding', member)
@@ -499,7 +498,7 @@ def test_bound_method_listener(members, search, expected):
             assert called_with is None
 
     # Test again, this time deleting the listener object
-
+    result.add_lookup_listener(to_call.call_me_back)
     del to_call
 
     for member in members:
@@ -579,6 +578,27 @@ def test_multiple_listeners():
     result_parent.remove_lookup_listener(call_me_back)
     result_child.remove_lookup_listener(call_me_back)
     result_other.remove_lookup_listener(call_me_back)
+
+    for member in members:
+        print('Adding', member)
+        content.add(member)
+        assert not called_with
+
+        print('Removing', member)
+        try:
+            content.remove(member)
+        except KeyError:
+            continue
+        else:
+            assert not called_with
+
+    # Test again, this time deleting the listener object
+
+    result_object.add_lookup_listener(call_me_back)
+    result_parent.add_lookup_listener(call_me_back)
+    result_child.add_lookup_listener(call_me_back)
+    result_other.add_lookup_listener(call_me_back)
+    del call_me_back
 
     for member in members:
         print('Adding', member)
