@@ -78,10 +78,9 @@ class DelegatedLookup(Lookup):
 class DelegatedResult(Result):
     '''
     Implementation of a result that supports changing lookup source.
-    When lookup_updated() is invoked (DelegatedLookup does it for you), the actual result is
-    switched over from the old lookup delegate to the new. The listeners subscriptions are also
-    removed from the old result and added to the new result. The listeners also gets triggered to
-    notify the change.
+    When lookup_updated() is invoked (from DelegatedLookup.lookup_updated()), the actual result is
+    switched over from the old lookup delegate to the new. Listeners are also notified if the
+    switch over happens to modify the content of this result.
     '''
 
     def __init__(self, lookup: DelegatedLookup, cls: Type[object]) -> None:
