@@ -515,7 +515,7 @@ def test_bound_method_listener(members, search, expected):
             assert called_with is None
 
 
-def test_multiple_listeners():
+def test_multiple_results():
     content, lookup = setup_lookup([])
 
     result_object = lookup.lookup_result(object)
@@ -755,7 +755,7 @@ def test_listener_with_executor(members, search, expected, request):
             assert called_in_thread is None
 
 
-def test_multiple_listeners_with_executor(request):
+def test_multiple_results_with_executor(request):
     executor = ThreadPoolExecutor()
     request.addfinalizer(executor.shutdown)
     content = InstanceContent(notify_in=executor)

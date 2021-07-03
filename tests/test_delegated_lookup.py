@@ -479,7 +479,7 @@ def test_bound_method_listener():
     call_after_remove_del()
 
 
-def test_multiple_listeners():
+def test_multiple_results():
     content1, lookup1, content2, lookup2, provider, delegated_lookup = setup_lookups()
 
     result_object = delegated_lookup.lookup_result(object)
