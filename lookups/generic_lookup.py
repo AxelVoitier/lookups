@@ -349,7 +349,7 @@ class Storage(ABC, Container):
          * >= 0: the amount of objects at the end
         :return: A transaction object
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def end_transaction(self, transaction: Transaction) -> Iterable[GLResult]:
@@ -359,7 +359,7 @@ class Storage(ABC, Container):
         :param transaction: The transaction object.
         :return: The results affected by a change.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def lookup(self, cls: Type[object]) -> Iterable[Pair]:
@@ -369,7 +369,7 @@ class Storage(ABC, Container):
         :param cls: The class to search for.
         :return: Iterable of Item
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def register_result(self, result: GLResult) -> None:
@@ -378,11 +378,11 @@ class Storage(ABC, Container):
 
         :param result: The new result to remember.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def find_result(self, cls: Type[object]) -> Optional[GLResult]:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class Transaction(ABC):
@@ -397,7 +397,7 @@ class Transaction(ABC):
         :return: True if the Item has been added for the first time or False if some other item
         equal to this one already existed in the lookup
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def remove(self, pair: Pair) -> None:
@@ -406,7 +406,7 @@ class Transaction(ABC):
 
         :param item: Item to remove.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def set_all(self, pairs: Collection[Pair]) -> None:
@@ -415,7 +415,7 @@ class Transaction(ABC):
 
         :param pairs: The collection of class/instance pairs.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def new_content(self, prev: Collection[Pair]) -> Tuple[Collection[Pair], Set[Pair]]:
@@ -425,4 +425,4 @@ class Transaction(ABC):
         :param prev: The previous content.
         :return: Tuple of new content, set of changes.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover

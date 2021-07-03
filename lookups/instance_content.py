@@ -111,7 +111,7 @@ class Convertor(ABC):
         :param obj: The registered object.
         :return: The object converted from this object.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def type(self, obj: object) -> Type[object]:
@@ -124,7 +124,7 @@ class Convertor(ABC):
         :return: The class that will be produced from this object (class or superclass of
         convert(obj))
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def id(self, obj: object) -> str:
@@ -136,7 +136,7 @@ class Convertor(ABC):
         :param obj: The registered object.
         :return: The ID for the object.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def display_name(self, obj: object) -> str:
@@ -148,7 +148,7 @@ class Convertor(ABC):
         :param obj: The registered object.
         :return: The name representing the object for the user.
         '''
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class SimpleItem(LookupItem, Pair):
