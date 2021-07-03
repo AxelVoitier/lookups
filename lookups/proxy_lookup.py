@@ -85,7 +85,7 @@ class PLResult(Result):
     '''
     Implementation of a composite result that supports having multiple lookup sources.
     When _lookup_added() or _lookup_removed() are invoked (from ProxyLookup.add/remove_lookup()),
-    listeners will be notified if instances also appears or dissapears from the composite result
+    listeners will be notified if instances appears or dissapears from the composite result.
     '''
 
     def __init__(self, lookup: ProxyLookup, cls: Type[object]) -> None:
