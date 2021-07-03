@@ -24,9 +24,13 @@ class Lookup(ABC):
     A general registry permitting clients to find instances of services (implementation of a given
     interface).
 
-    This class is inspired Netbeans Platform lookup mechanism. The Lookup API concentrates on the
+    This class is inspired by Netbeans Platform lookup mechanism. The Lookup API concentrates on the
     lookup, not on the registration.
     '''
+
+    _DEFAULT_LOOKUP: Lookup = None  # type: ignore
+    _DEFAULT_LOOKUP_PROVIDER: LookupProvider = None  # type: ignore
+    _DEFAULT_ENTRY_POINT_GROUP = 'lookup.default'
 
     @classmethod
     def get_default(cls) -> Lookup:
@@ -34,15 +38,52 @@ class Lookup(ABC):
         Method to obtain the global lookup in the whole system.
 
         The actual returned implementation can be different in different systems, but the default
-        one is based on lookup.Lookups.???.
+        one is based on lookups.ProxyLookup.
+
+        The resolution is the following:
+        - If there is already a default lookup provider defined, returns its lookup.
+        - If there is already a default lookup defined, returns it.
+        - Loads on EntryPointLookup on 'lookup.default' group:
+          - If it finds a lookup which happens to also be a lookup provider, returns its lookup.
+          - If it finds a lookup, returns it.
+          - If it finds a lookup provider, returns DelegatedLookup from it.
+        - Otherwise, returns a ProxyLookup with just the EntryPointLookup as source.
 
         :return: The global lookup in the system
         :rtype: Lookup
         '''
-        # Temporary solution
-        from .generic_lookup import GenericLookup
-        from .instance_content import InstanceContent
-        return GenericLookup(InstanceContent())
+
+        if (cls._DEFAULT_LOOKUP is not None) or (cls._DEFAULT_LOOKUP_PROVIDER is not None):
+            if cls._DEFAULT_LOOKUP_PROVIDER is not None:
+                lookup = cls._DEFAULT_LOOKUP_PROVIDER.get_lookup()
+                if lookup is not None:
+                    return lookup
+
+            return cls._DEFAULT_LOOKUP
+
+        from .entry_point import EntryPointLookup
+        epl = EntryPointLookup(cls._DEFAULT_ENTRY_POINT_GROUP)
+        cls._DEFAULT_LOOKUP = epl.lookup(Lookup)
+        if cls._DEFAULT_LOOKUP is not None:
+            if isinstance(cls._DEFAULT_LOOKUP, LookupProvider):
+                cls._DEFAULT_LOOKUP_PROVIDER = cls._DEFAULT_LOOKUP
+                lookup = cls._DEFAULT_LOOKUP_PROVIDER.get_lookup()
+                if lookup is not None:
+                    return lookup
+
+            return cls._DEFAULT_LOOKUP
+
+        provider = epl.lookup(LookupProvider)
+        if provider is not None:
+            from .delegated_lookup import DelegatedLookup
+            cls._DEFAULT_LOOKUP = DelegatedLookup(provider)
+
+            return cls._DEFAULT_LOOKUP
+
+        from .proxy_lookup import ProxyLookup
+        cls._DEFAULT_LOOKUP = ProxyLookup(epl)
+
+        return cls._DEFAULT_LOOKUP
 
     @abstractmethod
     def lookup(self, cls: Type[object]) -> Optional[object]:

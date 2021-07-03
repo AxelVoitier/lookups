@@ -7,6 +7,7 @@ CHANGELOG
 - Adds a EntryPointLookup.
 - Adds a DelegatedLookup.
 - Adds a ProxyLookup.
+- Adds a proper resolution for system default lookup Lookup.get_default().
 - Fixes issue with listeners registration disappearing immediately when using object-bound methods.
 - Content of a GenericLookup can now behave like a Container (ie. you can do things like "obj in content").
 - When an instance is not hashable, provides an alternative using id() of the object in order to be

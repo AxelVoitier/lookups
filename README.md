@@ -91,6 +91,7 @@ my_content.remove(child1)
 
 ## Other lookups
 
+* `lookups.Lookup.get_default()`: The default lookup in a system.
 * `lookups.ProxyLookup`: A lookup that merge results from several lookups.
 * `lookups.DelegatedLookup`: A lookup that redirects to another (dynamic) lookup, through a LookupProvider.
 * `lookups.EntryPointLookup`: A lookup loading its instances from a setuptools entry point group (ie. provided by any installed package).

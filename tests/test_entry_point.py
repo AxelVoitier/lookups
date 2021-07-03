@@ -51,7 +51,7 @@ def check_item(expected_classes, item):
 
 
 def test_instantiation():
-    assert EntryPointLookup('lookup.tests')
+    assert EntryPointLookup('lookups.test_entry_point')
 
 
 def test_non_existant_group():
@@ -60,14 +60,14 @@ def test_non_existant_group():
 
 @pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
 def test_lookup(search, expected_classes):
-    lookup = EntryPointLookup('lookup.tests')
+    lookup = EntryPointLookup('lookups.test_entry_point')
 
     assert isinstance(lookup.lookup(search), expected_classes)
 
 
 @pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
 def test_lookup_item(search, expected_classes):
-    lookup = EntryPointLookup('lookup.tests')
+    lookup = EntryPointLookup('lookups.test_entry_point')
 
     item = lookup.lookup_item(search)
     check_item(expected_classes, item)
@@ -76,7 +76,7 @@ def test_lookup_item(search, expected_classes):
 
 @pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
 def test_lookup_all(search, expected_classes):
-    lookup = EntryPointLookup('lookup.tests')
+    lookup = EntryPointLookup('lookups.test_entry_point')
 
     all_instances = lookup.lookup_all(search)
     check_all_instances(expected_classes, all_instances)
@@ -84,7 +84,7 @@ def test_lookup_all(search, expected_classes):
 
 @pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
 def test_lookup_result(search, expected_classes):
-    lookup = EntryPointLookup('lookup.tests')
+    lookup = EntryPointLookup('lookups.test_entry_point')
     if not isinstance(expected_classes, Sequence):
         expected_classes = (expected_classes, )
 
@@ -110,7 +110,7 @@ def test_lookup_result(search, expected_classes):
 
 @pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
 def test_listeners(search, expected_classes):
-    lookup = EntryPointLookup('lookup.tests')
+    lookup = EntryPointLookup('lookups.test_entry_point')
 
     result = lookup.lookup_result(search)
 
