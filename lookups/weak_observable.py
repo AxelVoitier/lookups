@@ -40,7 +40,7 @@ class WeakCallable:
         elif isinstance(other, ref):
             return self._ref.__eq__(other)
         else:
-            return self._ref.__eq__(WeakCallable(other)._ref)
+            return self._ref().__eq__(other)
 
     def __ne__(self, other: T.Any) -> bool:
         if isinstance(other, WeakCallable):
@@ -48,7 +48,7 @@ class WeakCallable:
         elif isinstance(other, ref):
             return self._ref.__ne__(other)
         else:
-            return self._ref.__ne__(WeakCallable(other)._ref)
+            return self._ref().__ne__(other)
 
     def __hash__(self) -> int:
         return hash(self._ref)

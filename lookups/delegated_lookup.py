@@ -115,8 +115,8 @@ class DelegatedResult(Result):
         self._delegate.add_lookup_listener(listener)
 
     def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
-        self._listeners.remove(WeakCallable(listener))
         self._delegate.remove_lookup_listener(listener)
+        self._listeners.remove(listener)  # type: ignore
 
     def all_classes(self) -> AbstractSet[Type[object]]:
         return self._delegate.all_classes()
