@@ -96,3 +96,4 @@ my_content.remove(child1)
 * `lookups.EmptyLookup`: A lookup containing nothing.
 * `lookups.EntryPointLookup`: A lookup loading its instances from a setuptools entry point group (ie. provided by any installed package).
 * `lookups.DelegatedLookup`: A lookup that redirects to another (dynamic) lookup, through a LookupProvider.
+* `lookups.ProxyLookup`: A lookup that merge results from several lookups.

@@ -19,6 +19,7 @@ from .simple import SimpleLookup
 from .generic_lookup import GenericLookup, AbstractLookup
 from .instance_content import InstanceContent, Convertor
 from .delegated_lookup import DelegatedLookup
+from .proxy_lookup import ProxyLookup
 from .entry_point import EntryPointLookup
 from .__about__ import (
     __title__, __summary__, __uri__, __version__,
@@ -31,7 +32,7 @@ __all__ = [
     'GenericLookup', 'AbstractLookup', 'InstanceContent', 'Convertor',
     'SimpleLookup',
     'singleton', 'fixed',
-    'DelegatedLookup', 'EntryPointLookup',
+    'DelegatedLookup', 'ProxyLookup', 'EntryPointLookup',
 
     '__title__', '__summary__', '__uri__', '__version__',
     '__author__', '__email__', '__license__', '__copyright__',
