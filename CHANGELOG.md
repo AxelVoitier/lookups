@@ -1,8 +1,8 @@
 CHANGELOG
 =========
 
-0.3.0 - XX XXXXXXXX 2021
-------------------------
+0.3.0 - 03 July 2021
+--------------------
 
 - Adds a EntryPointLookup.
 - Adds a DelegatedLookup.
