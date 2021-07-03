@@ -326,19 +326,13 @@ def test_lookup_result_already_exist():
 called_with = None
 
 
-def check_listener(call_me_back):
+def check_listener(content1, lookup1, content2, lookup2, provider, delegated_lookup, result):
     global called_with
-    content1, lookup1, content2, lookup2, provider, delegated_lookup = setup_lookups()
+    called_with = None
 
     parent = TestParentObject()
     child = TestChildObject()
     other = TestOtherObject()
-
-    result = delegated_lookup.lookup_result(TestParentObject)
-    assert not result.all_items()
-
-    called_with = None
-    result.add_lookup_listener(call_me_back)
 
     def check_add_remove(members1, members2, expected):
         def check_add(members, content):
@@ -446,29 +440,42 @@ def check_listener(call_me_back):
     check_presence([parent], [child, other])
     called_with = None
 
-    # Removing listener and adding/removing members
-    result.remove_lookup_listener(call_me_back)
-    check_add_remove([parent], [child, other], [])
-
-    # Test again, this time deleting the listener
-    result.add_lookup_listener(call_me_back)
     return partial(check_add_remove, [parent], [child, other], [])
 
 
 def test_listener():
+    content1, lookup1, content2, lookup2, provider, delegated_lookup = setup_lookups()
+
+    result = delegated_lookup.lookup_result(TestParentObject)
+    assert not result.all_items()
+
     def call_me_back(result):
         global called_with
         called_with = result
         print('Got called', result)
 
-    call_after_del = check_listener(call_me_back)
+    result.add_lookup_listener(call_me_back)
 
+    call_after_remove_del = check_listener(
+        content1, lookup1, content2, lookup2, provider, delegated_lookup, result)
+
+    # Removing listener and adding/removing members
+    result.remove_lookup_listener(call_me_back)
+    call_after_remove_del()
+
+    # Test again, this time deleting the listener
+    result.add_lookup_listener(call_me_back)
     del call_me_back
     gc.collect()
-    call_after_del()
+    call_after_remove_del()
 
 
 def test_bound_method_listener():
+    content1, lookup1, content2, lookup2, provider, delegated_lookup = setup_lookups()
+
+    result = delegated_lookup.lookup_result(TestParentObject)
+    assert not result.all_items()
+
     class ToCall:
 
         def call_me_back(self, result):
@@ -477,11 +484,20 @@ def test_bound_method_listener():
             print('Got called', result)
 
     to_call = ToCall()
-    call_after_del = check_listener(to_call.call_me_back)
+    result.add_lookup_listener(to_call.call_me_back)
 
+    call_after_remove_del = check_listener(
+        content1, lookup1, content2, lookup2, provider, delegated_lookup, result)
+
+    # Removing listener and adding/removing members
+    result.remove_lookup_listener(to_call.call_me_back)
+    call_after_remove_del()
+
+    # Test again, this time deleting the listener
+    result.add_lookup_listener(to_call.call_me_back)
     del to_call
     gc.collect()
-    call_after_del()
+    call_after_remove_del()
 
 
 def test_multiple_listeners():
