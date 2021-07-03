@@ -100,23 +100,34 @@ class DelegatedResult(Result):
         if result != self._delegate:
             old_result, self._delegate = self._delegate, result
 
-            for listener_ref in self._listeners:
-                listener = listener_ref.ref
-                if listener is None:
-                    continue
-                old_result.remove_lookup_listener(listener)
-                result.add_lookup_listener(listener)
-                listener(result)  # Manual trigger
+            if self._listeners:
+                old_result.remove_lookup_listener(self._proxy_listener)
+
+                # If these results contains some instances, trigger the listeners.
+                # Use all_classes() (that should internally use Item.get_type()) instead of
+                # all_instances() to avoid loading instances of converted items.
+                if old_result.all_classes() or result.all_classes():
+                    self._proxy_listener(result)
+
+                result.add_lookup_listener(self._proxy_listener)
 
             del old_result  # Explicit
 
     def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
+        if not self._listeners:
+            self._delegate.add_lookup_listener(self._proxy_listener)
+
         self._listeners.append(WeakCallable(listener, self._listeners.remove))
-        self._delegate.add_lookup_listener(listener)
 
     def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
-        self._delegate.remove_lookup_listener(listener)
         self._listeners.remove(listener)  # type: ignore
+
+        if not self._listeners:
+            self._delegate.remove_lookup_listener(self._proxy_listener)
+
+    def _proxy_listener(self, result: Result) -> None:
+        for listener in self._listeners:
+            listener(self)
 
     def all_classes(self) -> AbstractSet[Type[object]]:
         return self._delegate.all_classes()

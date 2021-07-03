@@ -342,8 +342,7 @@ def check_listener(content1, lookup1, content2, lookup2, provider, delegated_loo
                 print('Adding', member, 'in content', content)
                 content.add(member)
                 if member in expected:
-                    assert called_with
-                    assert member in result.all_instances()
+                    assert called_with is result
                     assert member in called_with.all_instances()
                     called_with = None
                 else:
@@ -356,8 +355,7 @@ def check_listener(content1, lookup1, content2, lookup2, provider, delegated_loo
                 print('Removing', member, 'from content', content)
                 content.remove(member)
                 if member in expected:
-                    assert called_with
-                    assert member not in result.all_instances()
+                    assert called_with is result
                     assert member not in called_with.all_instances()
                     called_with = None
                 else:
@@ -370,18 +368,16 @@ def check_listener(content1, lookup1, content2, lookup2, provider, delegated_loo
 
     def check_presence(present, not_present):
         for member in present:
-            assert member in result.all_instances()
             assert member in called_with.all_instances()
 
         for member in not_present:
-            assert member not in result.all_instances()
             assert member not in called_with.all_instances()
 
     check_add_remove([parent], [child, other], [parent])
 
     # Setup for checking invokation on switch
     content1.set([parent])
-    assert called_with
+    assert called_with is result
     called_with = None
     content2.set([child, other])
     assert called_with is None
@@ -389,7 +385,7 @@ def check_listener(content1, lookup1, content2, lookup2, provider, delegated_loo
     # Swtich to lookup2
     provider.lookup = lookup2
 
-    assert called_with
+    assert called_with is result
     check_presence([child], [parent, other])
     called_with = None
 
@@ -397,37 +393,20 @@ def check_listener(content1, lookup1, content2, lookup2, provider, delegated_loo
     content1.set([])
     assert called_with is None
     content2.set([])
-    assert called_with
+    assert called_with is result
     called_with = None
 
     check_add_remove([parent], [child, other], [child])
 
-    # Setup for checking invokation on switch
-    content1.set([parent])
-    assert called_with is None
-    content2.set([child, other])
-    assert called_with
-    called_with = None
-
-    # Swtich back to lookup1
+    # Swtich back to lookup1 (should not be invoked as lookups are empty)
     provider.lookup = lookup1
-
-    assert called_with
-    check_presence([parent], [child, other])
-    called_with = None
-
-    # Clear out contents for next tests
-    content1.set([])
-    assert called_with
-    called_with = None
-    content2.set([])
     assert called_with is None
 
     check_add_remove([parent], [child, other], [parent])
 
     # Setup for checking invokation on switch
     content1.set([parent])
-    assert called_with
+    assert called_with is result
     called_with = None
     content2.set([child, other])
     assert called_with is None
@@ -435,7 +414,7 @@ def check_listener(content1, lookup1, content2, lookup2, provider, delegated_loo
     # Stay with lookup1 but trigger an update
     provider.lookup = lookup1
 
-    assert not called_with
+    assert called_with is None
     called_with = result  # Just to make check_presence work
     check_presence([parent], [child, other])
     called_with = None
@@ -524,7 +503,7 @@ def test_multiple_listeners():
         if isinstance(member, cls):
             if added:
                 assert cls in called_with
-                assert called_with[cls] == result_cls
+                assert called_with[cls] is result_cls
                 del called_with[cls]
             else:
                 assert cls not in called_with
@@ -641,7 +620,7 @@ def test_del_result_clear_listener():
     gc.collect()
 
     content1.add(obj2)
-    assert not called_with
+    assert called_with is None
 
     result = delegated_lookup.lookup_result(object)
 
@@ -652,4 +631,4 @@ def test_del_result_clear_listener():
     gc.collect()
 
     content2.add(obj2)
-    assert not called_with
+    assert called_with is None
