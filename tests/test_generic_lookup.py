@@ -515,6 +515,90 @@ def test_bound_method_listener(members, search, expected):
             assert called_with is None
 
 
+def test_multiple_listeners():
+    content, lookup = setup_lookup([])
+
+    result = lookup.lookup_result(TestParentObject)
+
+    def call_me_back1(result):
+        called_with[1] = result
+        print('1 Got called', result)
+
+    def call_me_back2(result):
+        called_with[2] = result
+        print('2 Got called', result)
+
+    called_with = {}
+    result.add_lookup_listener(call_me_back1)
+    result.add_lookup_listener(call_me_back2)
+
+    members = [obj, obj, obj2, parent, child]
+
+    def check_for_a_class(member, added, cls, result_cls):
+        if isinstance(member, cls):
+            if added:
+                assert 1 in called_with
+                assert called_with[1] is result_cls
+                del called_with[1]
+                assert 2 in called_with
+                assert called_with[2] is result_cls
+                del called_with[2]
+            else:
+                assert not called_with
+        else:
+            assert not called_with
+
+    def check_not_called():
+        for member in members:
+            print('Adding', member)
+            content.add(member)
+            assert not called_with
+
+            print('Removing', member)
+            try:
+                content.remove(member)
+            except KeyError:
+                continue
+            else:
+                assert not called_with
+
+    # Adding members
+
+    for member in members:
+        print('Adding', member)
+        added = content.add(member)
+        check_for_a_class(member, added, TestParentObject, result)
+        assert not called_with
+
+    # Removing members
+
+    for member in members:
+        print('Removing', member)
+        try:
+            content.remove(member)
+        except KeyError:
+            continue
+        else:
+            check_for_a_class(member, True, TestParentObject, result)
+            assert not called_with
+
+    # Removing listener and adding/removing members
+
+    result.remove_lookup_listener(call_me_back1)
+    result.remove_lookup_listener(call_me_back2)
+
+    check_not_called()
+
+    # Test again, this time deleting the listener object
+
+    result.add_lookup_listener(call_me_back1)
+    result.add_lookup_listener(call_me_back2)
+    del call_me_back1
+    del call_me_back2
+
+    check_not_called()
+
+
 def test_multiple_results():
     content, lookup = setup_lookup([])
 
@@ -539,12 +623,26 @@ def test_multiple_results():
         if isinstance(member, cls):
             if added:
                 assert cls in called_with
-                assert called_with[cls] == result_cls
+                assert called_with[cls] is result_cls
                 del called_with[cls]
             else:
                 assert cls not in called_with
         else:
             assert cls not in called_with
+
+    def check_not_called():
+        for member in members:
+            print('Adding', member)
+            content.add(member)
+            assert not called_with
+
+            print('Removing', member)
+            try:
+                content.remove(member)
+            except KeyError:
+                continue
+            else:
+                assert not called_with
 
     # Adding members
 
@@ -579,18 +677,7 @@ def test_multiple_results():
     result_child.remove_lookup_listener(call_me_back)
     result_other.remove_lookup_listener(call_me_back)
 
-    for member in members:
-        print('Adding', member)
-        content.add(member)
-        assert not called_with
-
-        print('Removing', member)
-        try:
-            content.remove(member)
-        except KeyError:
-            continue
-        else:
-            assert not called_with
+    check_not_called()
 
     # Test again, this time deleting the listener object
 
@@ -600,18 +687,7 @@ def test_multiple_results():
     result_other.add_lookup_listener(call_me_back)
     del call_me_back
 
-    for member in members:
-        print('Adding', member)
-        content.add(member)
-        assert not called_with
-
-        print('Removing', member)
-        try:
-            content.remove(member)
-        except KeyError:
-            continue
-        else:
-            assert not called_with
+    check_not_called()
 
 
 @pytest.mark.xfail

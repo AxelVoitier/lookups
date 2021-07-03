@@ -11,7 +11,7 @@ Provides a lookup that redirects to another (dynamic) lookup, through a LookupPr
 # itself accessible through Lookups.proxy().
 
 # System imports
-from typing import Sequence, MutableSequence, AbstractSet, Type, Optional, Callable, Any
+from typing import Sequence, MutableSequence, AbstractSet, Type, Optional, Callable
 from weakref import WeakValueDictionary
 
 # Third-party imports
@@ -137,6 +137,3 @@ class DelegatedResult(Result):
 
     def all_items(self) -> Sequence[Item]:
         return self._delegate.all_items()
-
-    def __eq__(self, other: Any) -> bool:
-        return self._delegate.__eq__(other)

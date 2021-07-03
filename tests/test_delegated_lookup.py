@@ -479,6 +479,98 @@ def test_bound_method_listener():
     call_after_remove_del()
 
 
+def test_multiple_listeners():
+    content1, lookup1, content2, lookup2, provider, delegated_lookup = setup_lookups()
+
+    result = delegated_lookup.lookup_result(TestParentObject)
+
+    def call_me_back1(result):
+        called_with[1] = result
+        print('1 Got called', result)
+
+    def call_me_back2(result):
+        called_with[2] = result
+        print('2 Got called', result)
+
+    called_with = {}
+    result.add_lookup_listener(call_me_back1)
+    result.add_lookup_listener(call_me_back2)
+
+    members = [object(), TestParentObject(), TestChildObject(), TestOtherObject()]
+
+    def check_for_a_class(member, added, cls, result_cls):
+        if isinstance(member, cls):
+            if added:
+                assert 1 in called_with
+                assert called_with[1] is result_cls
+                del called_with[1]
+                assert 2 in called_with
+                assert called_with[2] is result_cls
+                del called_with[2]
+            else:
+                assert not called_with
+        else:
+            assert not called_with
+
+    def check_add_remove(content):
+        # Adding members
+
+        for member in members:
+            print('Adding', member)
+            added = content.add(member)
+            check_for_a_class(member, added, TestParentObject, result)
+            assert not called_with
+
+        # Removing members
+
+        for member in members:
+            print('Removing', member)
+            try:
+                content.remove(member)
+            except KeyError:
+                continue
+            else:
+                check_for_a_class(member, True, TestParentObject, result)
+                assert not called_with
+
+    def check_not_called(content):
+        for member in members:
+            print('Adding', member)
+            content.add(member)
+            assert not called_with
+
+            print('Removing', member)
+            try:
+                content.remove(member)
+            except KeyError:
+                continue
+            else:
+                assert not called_with
+
+    check_add_remove(content1)
+    check_not_called(content2)
+    provider.lookup = lookup2
+    called_with = {}
+    check_not_called(content1)
+    check_add_remove(content2)
+
+    # Removing listener and adding/removing members
+
+    result.remove_lookup_listener(call_me_back1)
+    result.remove_lookup_listener(call_me_back2)
+
+    check_not_called(content2)
+
+    # Test again, this time deleting the listener object
+
+    result.add_lookup_listener(call_me_back1)
+    result.add_lookup_listener(call_me_back2)
+    del call_me_back1
+    del call_me_back2
+
+    check_not_called(content2)
+
+
 def test_multiple_results():
     content1, lookup1, content2, lookup2, provider, delegated_lookup = setup_lookups()
 
