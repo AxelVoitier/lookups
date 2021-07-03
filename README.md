@@ -91,9 +91,10 @@ my_content.remove(child1)
 
 ## Other lookups
 
-* `lookups.fixed`: Simple unmodifiable lookup. Content is set at creation time.
-* `lookups.singleton`: Unmodifiable lookup that contains just one fixed object.
-* `lookups.EmptyLookup`: A lookup containing nothing.
-* `lookups.EntryPointLookup`: A lookup loading its instances from a setuptools entry point group (ie. provided by any installed package).
-* `lookups.DelegatedLookup`: A lookup that redirects to another (dynamic) lookup, through a LookupProvider.
 * `lookups.ProxyLookup`: A lookup that merge results from several lookups.
+* `lookups.DelegatedLookup`: A lookup that redirects to another (dynamic) lookup, through a LookupProvider.
+* `lookups.EntryPointLookup`: A lookup loading its instances from a setuptools entry point group (ie. provided by any installed package).
+* `lookups.fixed`: Simple unmodifiable lookup. Content is set at creation time. Will be one of:
+    * `lookup.SimpleLookup`: A basic lookup with a static content.
+    * `lookups.singleton`: Unmodifiable lookup that contains just one fixed object.
+    * `lookups.EmptyLookup`: A lookup containing nothing.
