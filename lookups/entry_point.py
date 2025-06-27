@@ -9,6 +9,8 @@ Provides a lookup that get its instances from package entry points.
 '''
 
 # System imports
+import sys
+
 try:
     from importlib import metadata
 except ImportError:
@@ -42,11 +44,14 @@ class EntryPointLookup(SimpleLookup):
         :param group: Entry-point group to load instances from.
         '''
         eps = metadata.entry_points()  # type: ignore
-        try:
-            group_eps = eps[group]
-        except KeyError:
-            instances = []
+        if sys.version_info < (3, 10):
+            try:
+                group_eps = eps[group]
+            except KeyError:
+                group_eps = []
         else:
-            instances = [ep.load()() for ep in group_eps]
+            group_eps = eps.select(group=group)
+
+        instances = [ep.load()() for ep in group_eps]
 
         super().__init__(*instances)
