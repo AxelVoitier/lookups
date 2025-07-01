@@ -10,11 +10,7 @@ Provides a lookup that get its instances from package entry points.
 
 # System imports
 import sys
-
-try:
-    from importlib import metadata
-except ImportError:
-    import importlib_metadata as metadata  # type: ignore
+from importlib import metadata
 
 # Third-party imports
 

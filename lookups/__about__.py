@@ -6,10 +6,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # System imports
-try:
-    from importlib import metadata
-except ImportError:
-    import importlib_metadata as metadata  # type: ignore
+from importlib import metadata
 
 # Third-party imports
 
