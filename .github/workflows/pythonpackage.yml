@@ -9,7 +9,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-beta.4']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
       fail-fast: false
 
     steps:
@@ -21,16 +21,16 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        make install
-    - name: Lint with flake8
+        python -m pip install hatch
+    - name: Linter check
       run: |
-        make style
-    - name: Typing check with mypy
+        hatch run lint:check
+    - name: Typing check
       run: |
-        make typing
+        hatch run typing:check
     - name: Test with pytest
       run: |
-        make tests
+        hatch test
     - name: Codecov
       run : |
         pip install codecov

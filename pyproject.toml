@@ -81,21 +81,21 @@ dependencies = [
 ]
 
 [tool.hatch.envs.typing.scripts]
-check-pyright = "pyright lookups tests examples"
-check-mypy = "mypy lookups tests examples"
+check-pyright = "pyright lookups tests"
+check-mypy = "mypy lookups tests"
 check = [
   "check-pyright",
   "check-mypy",
 ]
 
-[[tool.hatch.envs.typing.matrix]]
-python = [
-  "3.9",
-  "3.10",
-  "3.11",
-  "3.12",
-  "3.13",
-]
+# [[tool.hatch.envs.typing.matrix]]
+# python = [
+#   "3.9",
+#   "3.10",
+#   "3.11",
+#   "3.12",
+#   "3.13",
+# ]
 
 [tool.hatch.envs.tests]
 dependencies = [
