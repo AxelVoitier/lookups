@@ -30,7 +30,7 @@ jobs:
         hatch run typing:check-pyright
     - name: Test with pytest
       run: |
-        hatch test  -cover
+        hatch test --cover
     - name: Codecov
       run : |
         pip install codecov
