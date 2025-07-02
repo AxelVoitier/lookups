@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -14,11 +13,17 @@ from importlib import metadata
 
 
 __all__ = [
-    '__title__', '__summary__', '__uri__', '__version__',
-    '__author__', '__email__', '__license__', '__copyright__',
+    '__author__',
+    '__copyright__',
+    '__email__',
+    '__license__',
+    '__summary__',
+    '__title__',
+    '__uri__',
+    '__version__',
 ]
 
-mtdt = metadata.metadata('lookups')  # type: ignore
+mtdt = metadata.metadata('lookups')
 
 __title__ = mtdt['Name']
 __summary__ = mtdt['Summary']

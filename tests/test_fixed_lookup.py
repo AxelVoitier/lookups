@@ -1,21 +1,24 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 # System imports
 import gc
-from collections.abc import Hashable, Sequence, MutableSequence, Set, MutableSet
+from collections.abc import Hashable, Iterable, MutableSequence, MutableSet, Sequence, Set
+from typing import Any
 
 # Third-party imports
 import pytest
+from _pytest.mark.structures import ParameterSet
 
 # Local imports
-from lookups import fixed
-from .tools import TestParentObject, TestChildObject, TestOtherObject
+from lookups import Item, Result, fixed
 
+from .tools import TestChildObject, TestOtherObject, TestParentObject
 
 obj = object()
 obj2 = object()
@@ -25,10 +28,9 @@ child = TestChildObject()
 child2 = TestChildObject()
 other = TestOtherObject()
 
-MEMBER_FIXTURES = [
+MEMBER_FIXTURES: list[tuple[Iterable[Any], type[Any], Sequence[object]] | ParameterSet] = [
     # 0 member
     ([], object, []),
-
     # 1 member
     # None
     pytest.param([None], object, [], marks=pytest.mark.xfail),
@@ -45,7 +47,6 @@ MEMBER_FIXTURES = [
     ([child], TestParentObject, [child]),
     ([child], TestChildObject, [child]),
     ([child], TestOtherObject, []),
-
     # 2 members
     # None
     pytest.param([None, None], object, [], marks=pytest.mark.xfail),
@@ -68,14 +69,14 @@ MEMBER_FIXTURES = [
 ]
 
 
-def check_all_instances(expected, all_instances):
+def check_all_instances(expected: tuple[object, ...], all_instances: Sequence[Any]) -> None:
     assert isinstance(all_instances, Sequence)
     assert not isinstance(all_instances, MutableSequence)
     assert len(all_instances) == len(expected)
     assert all_instances == expected
 
 
-def check_item(expected, item):
+def check_item(expected: object | None, item: Item[Any] | None) -> None:
     if expected is None:
         assert item is None
         return
@@ -91,20 +92,28 @@ def check_item(expected, item):
     assert issubclass(item.get_type(), type(expected))
 
 
-def test_instantiation():
+def test_instantiation() -> None:
     assert fixed()
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup(
+    members: Iterable[object],
+    search: type[Any],
+    expected: Sequence[object],
+) -> None:
     expected_first = expected[0] if expected else None
     lookup = fixed(*members)
 
     assert lookup.lookup(search) == expected_first
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup_item(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_item(
+    members: Iterable[object],
+    search: type[Any],
+    expected: Sequence[object],
+) -> None:
     expected_first = expected[0] if expected else None
     lookup = fixed(*members)
 
@@ -113,8 +122,12 @@ def test_lookup_item(members, search, expected):
     assert item == lookup.lookup_item(search)
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup_all(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_all(
+    members: Iterable[object],
+    search: type[Any],
+    expected: Sequence[object],
+) -> None:
     expected = tuple(expected)
     lookup = fixed(*members)
 
@@ -122,8 +135,12 @@ def test_lookup_all(members, search, expected):
     check_all_instances(expected, all_instances)
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup_result(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_result(
+    members: Iterable[object],
+    search: type[Any],
+    expected: Sequence[object],
+) -> None:
     expected = tuple(expected)
     expected_classes = {type(instance) for instance in expected}
     lookup = fixed(*members)
@@ -149,13 +166,17 @@ def test_lookup_result(members, search, expected):
         assert item == again
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_listeners(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_listeners(
+    members: Iterable[object],
+    search: type[Any],
+    expected: Sequence[object],
+) -> None:
     lookup = fixed(*members)
 
     result = lookup.lookup_result(search)
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         pass
 
     result.add_lookup_listener(call_me_back)

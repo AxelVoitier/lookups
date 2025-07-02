@@ -1,13 +1,17 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 # System imports
+import contextlib
 import importlib
 import os
+from collections.abc import Container, Iterator
+from pathlib import Path
 
 # Third-party imports
 import pytest
@@ -15,13 +19,16 @@ import pytest
 # Local imports
 
 
-def list_packages_in_folder(root_package_folder, ignores=None):
+def list_packages_in_folder(
+    root_package_folder: Path,
+    ignores: Container[str] | None = None,
+) -> Iterator[str]:
     if ignores is None:
         ignores = []
 
-    basefolder = os.path.dirname(root_package_folder) + '/'
+    basefolder = str(root_package_folder.parent) + '/'
 
-    def convert_folder_to_package(foldername):
+    def convert_folder_to_package(foldername: str) -> str:
         return foldername.replace(basefolder, '').replace('/', '.')
 
     for dirpath, dirnames, filenames in os.walk(root_package_folder):
@@ -48,22 +55,20 @@ def list_packages_in_folder(root_package_folder, ignores=None):
             if module_name not in ignores:
                 yield module_name
 
-        try:
+        with contextlib.suppress(ValueError):
             dirnames.remove('__pycache__')
-        except ValueError:
-            pass
 
 
-def relative_path(base_filepath, *subpaths):
-    return os.path.abspath(os.path.join(os.path.dirname(base_filepath), *subpaths))
+def relative_path(base_filepath: str, *subpaths: str) -> Path:
+    return Path(base_filepath).parent.joinpath(*subpaths).absolute()
 
 
 @pytest.mark.parametrize(
-    'module_name', list_packages_in_folder(
+    'module_name',
+    list_packages_in_folder(
         relative_path(__file__, '..', 'lookups'),
-        ignores=[
-        ]
-    )
+        ignores=[],
+    ),
 )
-def test_imports(module_name):
+def test_imports(module_name: str) -> None:
     assert importlib.import_module(module_name)

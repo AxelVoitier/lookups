@@ -1,36 +1,49 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 # System imports
-from typing import Iterable, Collection, Set, Type, Optional, Tuple
+from typing import TYPE_CHECKING, TypeVar
 from weakref import WeakValueDictionary
 
 # Third-party imports
+from typing_extensions import override
 
 # Local imports
-from . import generic_lookup as GL
+from .generic_lookup import Storage, Transaction
+
+T = TypeVar('T')
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable
+    from typing import Any
+
+    from .generic_lookup import GLResult, Pair
 
 
-class SetStorage(GL.Storage):
-    '''Storing Pairs in a set datastructure, for GenericLookup.'''
+class SetStorage(Storage):
+    """Storing Pairs in a set datastructure, for GenericLookup."""
 
     def __init__(self) -> None:
-        self._content: Collection[GL.Pair] = set()
+        super().__init__()
+
+        self._content: Collection[Pair[Any]] = set()
 
         # Do not serialize
-        self._results: WeakValueDictionary[Type[object], GL.GLResult] = WeakValueDictionary()
+        self._results: WeakValueDictionary[type[object], GLResult[Any]] = WeakValueDictionary()
 
-    def begin_transaction(self, ensure: int) -> GL.Transaction:
+    @override
+    def begin_transaction(self, ensure: int) -> Transaction:
         return SetTransaction(ensure, self._content)
 
-    def end_transaction(self, transaction: GL.Transaction) -> Iterable[GL.GLResult]:
+    @override
+    def end_transaction(self, transaction: Transaction) -> Iterable[GLResult[Any]]:
         self._content, change_set = transaction.new_content(self._content)
 
-        results_to_notify = set()
+        results_to_notify: set[GLResult[Any]] = set()
         for pair in change_set:
             cls = pair.get_type()
             for result_type, result in self._results.items():
@@ -40,42 +53,54 @@ class SetStorage(GL.Storage):
 
         return results_to_notify
 
-    def lookup(self, cls: Type[object]) -> Iterable[GL.Pair]:
+    @override
+    def lookup(self, cls: type[T]) -> Iterable[Pair[T]]:
         for pair in self._content:  # TODO: improve
             if issubclass(pair.get_type(), cls):
                 yield pair
 
-    def register_result(self, result: GL.GLResult) -> None:
+    @override
+    def register_result(self, result: GLResult[T]) -> None:
         self._results[result._cls] = result
 
-    def find_result(self, cls: Type[object]) -> Optional[GL.GLResult]:
+    @override
+    def find_result(self, cls: type[T]) -> GLResult[T] | None:
         return self._results.get(cls, None)
 
+    @override
     def __contains__(self, item: object) -> bool:
         return item in self._content
 
 
-class SetTransaction(GL.Transaction):
+class SetTransaction(Transaction):
+    def __init__(self, ensure: int, current_content: Collection[Pair[Any]]) -> None:
+        super().__init__()
 
-    def __init__(self, ensure: int, current_content: Collection[GL.Pair]) -> None:
         self._new_list = set(current_content)
-        self._changed: Set[GL.Pair] = set()
+        self._changed: set[Pair[Any]] = set()
 
-    def new_content(self, prev: Collection[GL.Pair]) -> Tuple[Collection[GL.Pair], Set[GL.Pair]]:
+    @override
+    def new_content(
+        self,
+        prev: Collection[Pair[Any]],
+    ) -> tuple[Collection[Pair[Any]], set[Pair[Any]]]:
         return self._new_list, self._changed
 
-    def add(self, pair: GL.Pair) -> bool:
+    @override
+    def add(self, pair: Pair[Any]) -> bool:
         not_present = pair not in self._new_list
         if not_present:
             self._changed.add(pair)
         self._new_list.add(pair)
         return not_present
 
-    def remove(self, pair: GL.Pair) -> None:
+    @override
+    def remove(self, pair: Pair[Any]) -> None:
         self._changed.add(pair)
         self._new_list.remove(pair)
 
-    def set_all(self, pairs: Collection[GL.Pair]) -> None:
+    @override
+    def set_all(self, pairs: Collection[Pair[Any]]) -> None:
         pairs = set(pairs)
         self._changed.update(pairs.symmetric_difference(self._new_list))
         self._new_list = pairs

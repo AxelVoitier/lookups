@@ -1,25 +1,33 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-'''
+"""
 Static factory methods for creating common lookup implementations.
-'''
+"""
+
+from __future__ import annotations
 
 # System imports
-from typing import Sequence, AbstractSet, Type, Optional, Callable
+from typing import TYPE_CHECKING, TypeVar
 
 # Third-party imports
+from typing_extensions import override
 
 # Local imports
-from . import singleton as singleton_module, simple
-from .lookup import Lookup, Item, Result
+from . import simple
+from . import singleton as singleton_module
+from .lookup import Item, Lookup, Result
+
+T = TypeVar('T')
+if TYPE_CHECKING:
+    from collections.abc import Sequence, Set
+    from typing import Any, Callable
 
 
-def singleton(member: object, id_: str = None) -> Lookup:
-    return singleton_module.SingletonLookup(member, id_)
+def singleton(member: object, id_: str | None = None) -> Lookup:
+    return singleton_module.SingletonLookup(member, id_)  # pyright: ignore[reportFunctionMemberAccess]  # Confused pyright...
 
 
 def fixed(*members: object) -> Lookup:
@@ -33,65 +41,78 @@ def fixed(*members: object) -> Lookup:
         return simple.SimpleLookup(*members)
 
 
-class NoResult(Result):
-
-    def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
+class NoResult(Result[T]):
+    @override
+    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
         pass
 
-    def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
+    @override
+    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
         pass
 
-    def all_classes(self) -> AbstractSet[Type[object]]:
+    @override
+    def all_classes(self) -> Set[type[T]]:
         return frozenset()
 
-    def all_instances(self) -> Sequence[object]:
-        return tuple()
+    @override
+    def all_instances(self) -> Sequence[T]:
+        return ()
 
-    def all_items(self) -> Sequence[Item]:
-        return tuple()
+    @override
+    def all_items(self) -> Sequence[Item[T]]:
+        return ()
 
 
 class EmptyLookup(Lookup):
+    NO_RESULT: Result[Any] = NoResult()
 
-    NO_RESULT = NoResult()
-
-    def lookup(self, cls: Type[object]) -> Optional[object]:
+    @override
+    def lookup(self, cls: type[T]) -> None:
         return None
 
-    def lookup_result(self, cls: Type[object]) -> Result:
+    @override
+    def lookup_result(self, cls: type[T]) -> Result[T]:
         return self.NO_RESULT
 
 
-class LookupItem(Item):
+class LookupItem(Item[T]):
+    def __init__(self, instance: T, id_: str | None = None) -> None:
+        super().__init__()
 
-    def __init__(self, instance: object, id_: str = None) -> None:
         if instance is None:
-            raise ValueError('None cannot be a lookup member')
+            msg = 'None cannot be a lookup member'
+            raise ValueError(msg)
 
         self._instance = instance
         self._id = id_
 
+    @override
     def get_display_name(self) -> str:
         return self.get_id()
 
+    @override
     def get_id(self) -> str:
-        if self._id is not None:
-            return self._id
+        if (id := self._id) is not None:
+            return id
         else:
             return str(self._instance)
 
-    def get_instance(self) -> Optional[object]:
+    @override
+    def get_instance(self) -> T | None:
         return self._instance
 
-    def get_type(self) -> Type[object]:
+    @override
+    def get_type(self) -> type[T]:
         return type(self._instance)
 
+    @override
     def __eq__(self, other: object) -> bool:
         if isinstance(other, type(self)):
             return self._instance == other.get_instance()
         else:
             return False
 
+    @override
     def __hash__(self) -> int:
         try:
             return hash(self._instance)

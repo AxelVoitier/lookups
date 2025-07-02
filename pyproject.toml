@@ -71,7 +71,7 @@ dependencies = [
 ]
 
 [tool.hatch.envs.lint.scripts]
-check = "ruff check lookups tests examples"
+check = "ruff check lookups tests; ruff check --statistics lookups tests"
 
 [tool.hatch.envs.typing]
 dependencies = [
@@ -153,8 +153,6 @@ select = ["ALL"]
 ignore = [
   # "C408",  # "Unnecessary" `dict`, `list` or `tuple` calls instead of literals
   "Q",  # Quotes
-  "ANN101",  # Annotate self
-  "ANN102",  # Annotate cls
   "SLF001",  # Access private _member
   "RET505",  # Else after return
   "ARG001",  # Unused function argument
@@ -166,17 +164,24 @@ ignore = [
   "RET504",  # Unnecessary assignment to `...` before `return` statement
   "A001",  # Variable `...` is shadowing a Python builtin
   "A002",  # Function argument `...` is shadowing a Python builtin
-  "PYI025",  # se AbstractSet instead of Set
+  "PYI025",  # Use AbstractSet instead of Set
+  "FIX002",  # Line contains todo
+  "TD",  # TODOs
 
   "D",  # Temporarily: docstrings
   "ERA001",  # Temporarily: commented out code
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = [
   "D",  # Docstrings
   "S101",  # Use of assert
   "T201",  # Print found
+  "T203",  # P-Print found
+  "TC002",  # Move third-party import `...` into a type-checking block
+  "TC003",  # Move standard library import `...` into a type-checking block
+  "PLR0912",  # Too many branches
+  "PLR0915",  # Too many statements
 ]
 
 [tool.ruff.lint.flake8-comprehensions]

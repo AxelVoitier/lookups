@@ -1,28 +1,35 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2021 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-'''
+"""
 Provides a lookup that redirects to another (dynamic) lookup, through a LookupProvider.
-'''
+"""
 # In original Java lookups, it corresponds to SimpleProxyLookup,
 # itself accessible through Lookups.proxy().
 
+from __future__ import annotations
+
 # System imports
-from typing import Sequence, MutableSequence, AbstractSet, Type, Optional, Callable
+from typing import TYPE_CHECKING, TypeVar
 from weakref import WeakValueDictionary
 
 # Third-party imports
+from typing_extensions import override
 
 # Local imports
-from .lookup import Lookup, Item, Result, LookupProvider
+from .lookup import Item, Lookup, LookupProvider, Result
 from .weak_observable import WeakCallable
+
+T = TypeVar('T')
+if TYPE_CHECKING:
+    from collections.abc import MutableSequence, Sequence, Set
+    from typing import Any, Callable
 
 
 class DelegatedLookup(Lookup):
-    '''
+    """
     Implementation of a lookup that forward all requests to another lookup. The point being that
     the other lookup can change completely (ie. be a different object instance). This lookup remains
     the same object (obviously) and take care of handing over all the outstanding results and
@@ -30,25 +37,29 @@ class DelegatedLookup(Lookup):
 
     The delegate lookup is given by a LookupProvider. Just remember to call lookup_updated()
     whenever the delegate lookup changes.
-    '''
+    """
 
     def __init__(self, provider: LookupProvider) -> None:
-        '''
+        """
         Creates a new DelegatedLookup that gets its delegate from the supplied LookupProvider.
         The provider is immediately asked for a Lookup.
 
         :param provider: Lookup provider that will be asked when lookup_updated() is invoked.
-        '''
+        """
+        super().__init__()
+
         self._provider = provider
         self._delegate = provider.get_lookup()
-        self._results: WeakValueDictionary[Type[object], DelegatedResult] = WeakValueDictionary()
+        self._results: WeakValueDictionary[type[object], DelegatedResult[Any]] = (
+            WeakValueDictionary()
+        )
 
     def lookup_updated(self) -> None:
-        '''
+        """
         Check for change in delegate lookup. This method purposedly does not take any lookup in
         parameter. Because only the provider given at creation time can supply a new lookup. The
         lookup provider is a priviledged API.
-        '''
+        """
         lookup = self._provider.get_lookup()
         if self._delegate != lookup:
             self._delegate = lookup
@@ -58,41 +69,44 @@ class DelegatedLookup(Lookup):
 
     @property
     def delegate(self) -> Lookup:
-        '''Returns the lookup we currently delegate to.'''
+        """Returns the lookup we currently delegate to."""
         return self._delegate
 
-    def lookup(self, cls: Type[object]) -> Optional[object]:
+    @override
+    def lookup(self, cls: type[T]) -> T | None:
         return self._delegate.lookup(cls)
 
-    def lookup_result(self, cls: Type[object]) -> Result:
-        result = self._results.get(cls, None)
-        if result is not None:
+    @override
+    def lookup_result(self, cls: type[T]) -> Result[T]:
+        if (result := self._results.get(cls, None)) is not None:
             return result
 
-        result = DelegatedResult(self, cls)
+        result = DelegatedResult[T](self, cls)
         self._results[cls] = result
 
         return result
 
 
-class DelegatedResult(Result):
-    '''
+class DelegatedResult(Result[T]):
+    """
     Implementation of a result that supports changing lookup source.
     When lookup_updated() is invoked (from DelegatedLookup.lookup_updated()), the actual result is
     switched over from the old lookup delegate to the new. Listeners are also notified if the
     switch over happens to modify the content of this result.
-    '''
+    """
 
-    def __init__(self, lookup: DelegatedLookup, cls: Type[object]) -> None:
-        '''
+    def __init__(self, lookup: DelegatedLookup, cls: type[T]) -> None:
+        """
         Creates a new DelegatedResult for the given class.
 
         A result is immediately asked to the delegate lookup.
-        '''
+        """
+        super().__init__()
+
         self._lookup = lookup
         self._cls = cls
         self._delegate = self._lookup.delegate.lookup_result(self._cls)
-        self._listeners: MutableSequence[WeakCallable] = []
+        self._listeners: MutableSequence[WeakCallable[[Result[T]], Any]] = []
 
     def lookup_updated(self) -> None:
         result = self._lookup.delegate.lookup_result(self._cls)
@@ -112,27 +126,32 @@ class DelegatedResult(Result):
 
             del old_result  # Explicit
 
-    def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
+    @override
+    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
         if not self._listeners:
             self._delegate.add_lookup_listener(self._proxy_listener)
 
-        self._listeners.append(WeakCallable(listener, self._listeners.remove))
+        self._listeners.append(WeakCallable(listener, self.remove_lookup_listener))
 
-    def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
-        self._listeners.remove(listener)  # type: ignore
+    @override
+    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
+        self._listeners.remove(listener)  # pyright: ignore[reportArgumentType]  # WeakCallable.__eq__ handles it transparently
 
         if not self._listeners:
             self._delegate.remove_lookup_listener(self._proxy_listener)
 
-    def _proxy_listener(self, result: Result) -> None:
+    def _proxy_listener(self, result: Result[T]) -> None:
         for listener in self._listeners:
             listener(self)
 
-    def all_classes(self) -> AbstractSet[Type[object]]:
+    @override
+    def all_classes(self) -> Set[type[T]]:
         return self._delegate.all_classes()
 
-    def all_instances(self) -> Sequence[object]:
+    @override
+    def all_instances(self) -> Sequence[T]:
         return self._delegate.all_instances()
 
-    def all_items(self) -> Sequence[Item]:
+    @override
+    def all_items(self) -> Sequence[Item[T]]:
         return self._delegate.all_items()

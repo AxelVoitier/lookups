@@ -1,39 +1,57 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# System imports
+# ruff: noqa: I001  # Order matters to avoid cyclic imports
 
-# Third-party imports
-
-# Local imports
-from .lookup import (
-    Lookup, Result, Item,
-    LookupProvider,
+from .__about__ import (
+    __author__,
+    __copyright__,
+    __email__,
+    __license__,
+    __summary__,
+    __title__,
+    __uri__,
+    __version__,
 )
-from .lookups import singleton, fixed, EmptyLookup
+from .lookup import (
+    Item,
+    Lookup,
+    LookupProvider,
+    Result,
+)
+from .lookups import EmptyLookup, fixed, singleton
 from .simple import SimpleLookup
-from .generic_lookup import GenericLookup, AbstractLookup
-from .instance_content import InstanceContent, Convertor
+from .generic_lookup import AbstractLookup, GenericLookup
+from .instance_content import Convertor, InstanceContent
 from .delegated_lookup import DelegatedLookup
 from .proxy_lookup import ProxyLookup
 from .entry_point import EntryPointLookup
-from .__about__ import (
-    __title__, __summary__, __uri__, __version__,
-    __author__, __email__, __license__, __copyright__,
-)
 
 __all__ = [
-    'Lookup', 'Result', 'Item',
+    'AbstractLookup',
+    'Convertor',
+    'DelegatedLookup',
+    'EmptyLookup',
+    'EntryPointLookup',
+    'GenericLookup',
+    'InstanceContent',
+    'Item',
+    'Lookup',
     'LookupProvider',
-    'GenericLookup', 'AbstractLookup', 'InstanceContent', 'Convertor',
+    'ProxyLookup',
+    'Result',
     'SimpleLookup',
-    'DelegatedLookup', 'ProxyLookup', 'EntryPointLookup',
-    'singleton', 'fixed', 'EmptyLookup',
-
-    '__title__', '__summary__', '__uri__', '__version__',
-    '__author__', '__email__', '__license__', '__copyright__',
+    '__author__',
+    '__copyright__',
+    '__email__',
+    '__license__',
+    '__summary__',
+    '__title__',
+    '__uri__',
+    '__version__',
+    'fixed',
+    'singleton',
 ]

@@ -1,24 +1,37 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2021 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 # System imports
 import gc
-from collections.abc import Hashable, Sequence, MutableSequence, Set, MutableSet
+from collections.abc import (
+    Collection,
+    Container,
+    Hashable,
+    Iterable,
+    MutableSequence,
+    MutableSet,
+    Sequence,
+    Set,
+)
 from functools import partial
+from typing import Any, Callable, cast
 
 # Third-party imports
 import pytest
 
 # Local imports
-from lookups import ProxyLookup, GenericLookup, InstanceContent
-from .tools import TestParentObject, TestChildObject, TestOtherObject
+from lookups import GenericLookup, InstanceContent, Item, Lookup, ProxyLookup, Result
+from lookups.proxy_lookup import PLResult
+
+from .tools import TestChildObject, TestOtherObject, TestParentObject
 
 
-def setup_lookups():
+def setup_lookups() -> tuple[InstanceContent, Lookup, InstanceContent, Lookup, ProxyLookup]:
     content1 = InstanceContent()
     lookup1 = GenericLookup(content1)
     content2 = InstanceContent()
@@ -29,7 +42,7 @@ def setup_lookups():
     return content1, lookup1, content2, lookup2, proxy_lookup
 
 
-def check_all_instances(expected, all_instances):
+def check_all_instances(expected: MutableSequence[Any], all_instances: Iterable[Any]) -> None:
     assert isinstance(all_instances, Sequence)
     assert not isinstance(all_instances, MutableSequence)
     assert len(all_instances) == len(expected)
@@ -38,10 +51,10 @@ def check_all_instances(expected, all_instances):
         expected.remove(instance)
 
 
-def check_item(expected, item):
+def check_item(expected: object | Sequence[object] | None, item: Item[Any] | None) -> int | None:
     if expected is None:
         assert item is None
-        return
+        return None
 
     assert item is not None
     assert isinstance(item, Hashable)
@@ -50,6 +63,9 @@ def check_item(expected, item):
     assert item.get_id()
 
     if isinstance(expected, Sequence):
+        # Otherwise it also understands a Sequence[Unknown]...
+        expected = cast('Sequence[object]', expected)
+
         assert item.get_instance() in expected
         idx = expected.index(item.get_instance())
 
@@ -60,9 +76,10 @@ def check_item(expected, item):
         assert item.get_instance() is expected
 
         assert issubclass(item.get_type(), type(expected))
+        return None
 
 
-def check_result(expected, result):
+def check_result(expected: Collection[object], result: Result[Any]) -> None:
     expected_classes = {type(instance) for instance in expected}
     expected_copy1 = list(expected)
     expected_copy2 = list(expected)
@@ -84,15 +101,16 @@ def check_result(expected, result):
     assert len(all_items) == len(expected)
     for item, again in zip(all_items, result.all_items()):
         idx = check_item(expected_copy2, item)
+        assert idx is not None
         expected_copy2.pop(idx)
         assert item == again
 
 
-def test_instantiation():
+def test_instantiation() -> None:
     assert ProxyLookup()
 
 
-def test_lookup():
+def test_lookup() -> None:
     content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
 
     parent = TestParentObject()
@@ -143,7 +161,7 @@ def test_lookup():
     assert not instance
 
 
-def test_lookup_item():
+def test_lookup_item() -> None:
     content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
 
     parent = TestParentObject()
@@ -190,7 +208,7 @@ def test_lookup_item():
     check_item(None, item)
 
 
-def test_lookup_all():
+def test_lookup_all() -> None:
     content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
 
     parent = TestParentObject()
@@ -239,7 +257,7 @@ def test_lookup_all():
     check_all_instances([], all_instances)
 
 
-def test_lookup_result():
+def test_lookup_result() -> None:
     content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
 
     parent = TestParentObject()
@@ -288,7 +306,7 @@ def test_lookup_result():
     check_result([], result)
 
 
-def test_lookup_result_already_exist():
+def test_lookup_result_already_exist() -> None:
     _, lookup1, _, lookup2, proxy_lookup = setup_lookups()
 
     # Test without lookup2
@@ -312,10 +330,17 @@ def test_lookup_result_already_exist():
     assert result1 is proxy_lookup.lookup_result(object)
 
 
-called_with = None
+called_with: Result[Any] | None = None
 
 
-def check_listener(content1, lookup1, content2, lookup2, proxy_lookup, result):
+def check_listener(
+    content1: InstanceContent,
+    lookup1: Lookup,
+    content2: InstanceContent,
+    lookup2: Lookup,
+    proxy_lookup: ProxyLookup,
+    result: Result[Any],
+) -> Callable[[], None]:
     global called_with
     called_with = None
 
@@ -323,14 +348,18 @@ def check_listener(content1, lookup1, content2, lookup2, proxy_lookup, result):
     child = TestChildObject()
     other = TestOtherObject()
 
-    def check_add_remove(members1, members2, expected):
+    def check_add_remove(
+        members1: Iterable[object],
+        members2: Iterable[object],
+        expected: Container[object],
+    ) -> None:
         # We will also check that the result that is passed to the listener
         # do contain all the instances of all the proxied lookups results.
         # And not just being the result of one particular proxied lookup.
-        expected_added = []
-        expected_removed = []
+        expected_added: list[object] = []
+        expected_removed: list[object] = []
 
-        def check_add(members, content):
+        def check_add(members: Iterable[object], content: InstanceContent) -> None:
             global called_with
 
             for member in members:
@@ -338,6 +367,7 @@ def check_listener(content1, lookup1, content2, lookup2, proxy_lookup, result):
                 content.add(member)
                 if member in expected:
                     expected_added.append(member)
+                    assert called_with is not None
                     assert called_with is result
                     assert member in called_with.all_instances()
                     check_presence(expected_added, expected_removed)
@@ -345,7 +375,7 @@ def check_listener(content1, lookup1, content2, lookup2, proxy_lookup, result):
                 else:
                     assert called_with is None
 
-        def check_remove(members, content):
+        def check_remove(members: Iterable[object], content: InstanceContent) -> None:
             global called_with
 
             for member in members:
@@ -355,6 +385,7 @@ def check_listener(content1, lookup1, content2, lookup2, proxy_lookup, result):
                     expected_added.remove(member)
                     expected_removed.append(member)
                     assert called_with is result
+                    assert called_with is not None
                     assert member not in called_with.all_instances()
                     check_presence(expected_added, expected_removed)
                     called_with = None
@@ -366,11 +397,13 @@ def check_listener(content1, lookup1, content2, lookup2, proxy_lookup, result):
         check_remove(members1, content1)
         check_remove(members2, content2)
 
-    def check_presence(present, not_present):
+    def check_presence(present: Iterable[object], not_present: Iterable[object]) -> None:
         for member in present:
+            assert called_with is not None
             assert member in called_with.all_instances()
 
         for member in not_present:
+            assert called_with is not None
             assert member not in called_with.all_instances()
 
     check_add_remove([parent], [child, other], [parent])
@@ -448,13 +481,13 @@ def check_listener(content1, lookup1, content2, lookup2, proxy_lookup, result):
     return partial(check_add_remove, [parent], [child, other], [])
 
 
-def test_listener():
+def test_listener() -> None:
     content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
 
     result = proxy_lookup.lookup_result(TestParentObject)
     assert not result.all_items()
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         global called_with
         called_with = result
         print('Got called', result)
@@ -462,7 +495,13 @@ def test_listener():
     result.add_lookup_listener(call_me_back)
 
     call_after_remove_del = check_listener(
-        content1, lookup1, content2, lookup2, proxy_lookup, result)
+        content1,
+        lookup1,
+        content2,
+        lookup2,
+        proxy_lookup,
+        result,
+    )
 
     # Removing listener and adding/removing members
     result.remove_lookup_listener(call_me_back)
@@ -475,15 +514,14 @@ def test_listener():
     call_after_remove_del()
 
 
-def test_bound_method_listener():
+def test_bound_method_listener() -> None:
     content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
 
     result = proxy_lookup.lookup_result(TestParentObject)
     assert not result.all_items()
 
     class ToCall:
-
-        def call_me_back(self, result):
+        def call_me_back(self, result: Result[Any]) -> None:
             global called_with
             called_with = result
             print('Got called', result)
@@ -492,7 +530,13 @@ def test_bound_method_listener():
     result.add_lookup_listener(to_call.call_me_back)
 
     call_after_remove_del = check_listener(
-        content1, lookup1, content2, lookup2, proxy_lookup, result)
+        content1,
+        lookup1,
+        content2,
+        lookup2,
+        proxy_lookup,
+        result,
+    )
 
     # Removing listener and adding/removing members
     result.remove_lookup_listener(to_call.call_me_back)
@@ -505,26 +549,26 @@ def test_bound_method_listener():
     call_after_remove_del()
 
 
-def test_multiple_listeners():
-    content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
+def test_multiple_listeners() -> None:
+    content1, _, content2, lookup2, proxy_lookup = setup_lookups()
 
     result = proxy_lookup.lookup_result(TestParentObject)
 
-    def call_me_back1(result):
+    def call_me_back1(result: Result[Any]) -> None:
         called_with[1] = result
         print('1 Got called', result)
 
-    def call_me_back2(result):
+    def call_me_back2(result: Result[Any]) -> None:
         called_with[2] = result
         print('2 Got called', result)
 
-    called_with = {}
+    called_with: dict[int, Result[Any]] = {}
     result.add_lookup_listener(call_me_back1)
     result.add_lookup_listener(call_me_back2)
 
     members = [object(), TestParentObject(), TestChildObject(), TestOtherObject()]
 
-    def check_for_a_class(member, added, cls, result_cls):
+    def check_for_a_class(member: object, added: bool, cls: type[Any], result_cls: object) -> None:  # noqa: FBT001
         if isinstance(member, cls):
             if added:
                 assert 1 in called_with
@@ -538,7 +582,7 @@ def test_multiple_listeners():
         else:
             assert not called_with
 
-    def check_add_remove(content):
+    def check_add_remove(content: InstanceContent) -> None:
         # Adding members
 
         for member in members:
@@ -556,10 +600,10 @@ def test_multiple_listeners():
             except KeyError:
                 continue
             else:
-                check_for_a_class(member, True, TestParentObject, result)
+                check_for_a_class(member, True, TestParentObject, result)  # noqa: FBT003
                 assert not called_with
 
-    def check_not_called(content):
+    def check_not_called(content: InstanceContent) -> None:
         for member in members:
             print('Adding', member)
             content.add(member)
@@ -599,19 +643,20 @@ def test_multiple_listeners():
     check_not_called(content2)
 
 
-def test_multiple_results():
-    content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
+def test_multiple_results() -> None:
+    content1, _, content2, lookup2, proxy_lookup = setup_lookups()
 
     result_object = proxy_lookup.lookup_result(object)
     result_parent = proxy_lookup.lookup_result(TestParentObject)
     result_child = proxy_lookup.lookup_result(TestChildObject)
     result_other = proxy_lookup.lookup_result(TestOtherObject)
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
+        assert isinstance(result, PLResult)
         called_with[result._cls] = result
         print('Got called', result)
 
-    called_with = {}
+    called_with: dict[type[Any], Result[Any]] = {}
     result_object.add_lookup_listener(call_me_back)
     result_parent.add_lookup_listener(call_me_back)
     result_child.add_lookup_listener(call_me_back)
@@ -619,7 +664,7 @@ def test_multiple_results():
 
     members = [object(), TestParentObject(), TestChildObject(), TestOtherObject()]
 
-    def check_for_a_class(member, added, cls, result_cls):
+    def check_for_a_class(member: object, added: bool, cls: type[Any], result_cls: object) -> None:  # noqa: FBT001
         if isinstance(member, cls):
             if added:
                 assert cls in called_with
@@ -630,7 +675,7 @@ def test_multiple_results():
         else:
             assert cls not in called_with
 
-    def check_add_remove(content):
+    def check_add_remove(content: InstanceContent) -> None:
         # Adding members
 
         for member in members:
@@ -651,13 +696,13 @@ def test_multiple_results():
             except KeyError:
                 continue
             else:
-                check_for_a_class(member, True, object, result_object)
-                check_for_a_class(member, True, TestParentObject, result_parent)
-                check_for_a_class(member, True, TestChildObject, result_child)
-                check_for_a_class(member, True, TestOtherObject, result_other)
+                check_for_a_class(member, True, object, result_object)  # noqa: FBT003
+                check_for_a_class(member, True, TestParentObject, result_parent)  # noqa: FBT003
+                check_for_a_class(member, True, TestChildObject, result_child)  # noqa: FBT003
+                check_for_a_class(member, True, TestOtherObject, result_other)  # noqa: FBT003
                 assert not called_with
 
-    def check_not_called(content):
+    def check_not_called(content: InstanceContent) -> None:
         for member in members:
             print('Adding', member)
             content.add(member)
@@ -701,7 +746,7 @@ def test_multiple_results():
 
 
 @pytest.mark.xfail
-def test_modify_lookup_from_listener():
+def test_modify_lookup_from_listener() -> None:
     content1, *_, proxy_lookup = setup_lookups()
 
     result = proxy_lookup.lookup_result(object)
@@ -709,7 +754,7 @@ def test_modify_lookup_from_listener():
     obj1 = TestParentObject()
     obj2 = TestParentObject()
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         content1.add(obj2)
 
     result.add_lookup_listener(call_me_back)
@@ -717,8 +762,7 @@ def test_modify_lookup_from_listener():
     content1.add(obj1)
 
 
-def test_del_result_clear_listener():
-    global called_with
+def test_del_result_clear_listener() -> None:
     content1, _, content2, lookup2, proxy_lookup = setup_lookups()
 
     result = proxy_lookup.lookup_result(object)
@@ -726,8 +770,8 @@ def test_del_result_clear_listener():
     obj1 = TestParentObject()
     obj2 = TestParentObject()
 
-    def call_me_back(result):
-        global called_with
+    def call_me_back(result: Result[Any]) -> None:
+        nonlocal called_with
         called_with = result
         print('Got called', result)
 
@@ -735,6 +779,8 @@ def test_del_result_clear_listener():
     result.add_lookup_listener(call_me_back)
 
     content1.add(obj1)
+    called_with = cast('Result[Any] | None', called_with)
+    assert called_with is not None
     assert obj1 in called_with.all_instances()
     called_with = None
 

@@ -1,21 +1,23 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2021 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 # System imports
 import gc
-from collections.abc import Hashable, Sequence, MutableSequence, Set, MutableSet
+from collections.abc import Hashable, Iterable, MutableSequence, MutableSet, Sequence, Set
+from typing import Any
 
 # Third-party imports
 import pytest
 
 # Local imports
-from lookups import EntryPointLookup
-from .tools import TestParentObject, TestChildObject, TestOtherObject
+from lookups import EntryPointLookup, Item, Result
 
+from .tools import TestChildObject, TestOtherObject, TestParentObject
 
 # WARNING: For some reasons, pytest seems to duplicate the entry points. This is probably because
 #          it tries to make the package available as if it was installed. So, if you already have
@@ -31,14 +33,17 @@ MEMBER_FIXTURES = [
 ]
 
 
-def check_all_instances(expected_classes, all_instances):
+def check_all_instances(
+    expected_classes: type[Any] | tuple[type[Any], ...],
+    all_instances: Iterable[Any],
+) -> None:
     assert isinstance(all_instances, Sequence)
     assert not isinstance(all_instances, MutableSequence)
     for instance in all_instances:
         assert isinstance(instance, expected_classes)
 
 
-def check_item(expected_classes, item):
+def check_item(expected_classes: type[Any] | tuple[type[Any], ...], item: Item[Any] | None) -> None:
     assert item is not None
     assert isinstance(item, Hashable)
 
@@ -50,23 +55,26 @@ def check_item(expected_classes, item):
     assert issubclass(item.get_type(), expected_classes)
 
 
-def test_instantiation():
+def test_instantiation() -> None:
     assert EntryPointLookup('lookups.test_entry_point')
 
 
-def test_non_existant_group():
+def test_non_existant_group() -> None:
     assert EntryPointLookup('non-existant')
 
 
-@pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
-def test_lookup(search, expected_classes):
+@pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
+def test_lookup(search: type[Any], expected_classes: type[Any] | tuple[type[Any], ...]) -> None:
     lookup = EntryPointLookup('lookups.test_entry_point')
 
     assert isinstance(lookup.lookup(search), expected_classes)
 
 
-@pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
-def test_lookup_item(search, expected_classes):
+@pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
+def test_lookup_item(
+    search: type[Any],
+    expected_classes: type[Any] | tuple[type[Any], ...],
+) -> None:
     lookup = EntryPointLookup('lookups.test_entry_point')
 
     item = lookup.lookup_item(search)
@@ -74,19 +82,22 @@ def test_lookup_item(search, expected_classes):
     assert item == lookup.lookup_item(search)
 
 
-@pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
-def test_lookup_all(search, expected_classes):
+@pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
+def test_lookup_all(search: type[Any], expected_classes: type[Any] | tuple[type[Any], ...]) -> None:
     lookup = EntryPointLookup('lookups.test_entry_point')
 
     all_instances = lookup.lookup_all(search)
     check_all_instances(expected_classes, all_instances)
 
 
-@pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
-def test_lookup_result(search, expected_classes):
+@pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
+def test_lookup_result(
+    search: type[Any],
+    expected_classes: type[Any] | tuple[type[Any], ...],
+) -> None:
     lookup = EntryPointLookup('lookups.test_entry_point')
     if not isinstance(expected_classes, Sequence):
-        expected_classes = (expected_classes, )
+        expected_classes = (expected_classes,)
 
     result = lookup.lookup_result(search)
     assert result
@@ -108,13 +119,13 @@ def test_lookup_result(search, expected_classes):
         assert item == again
 
 
-@pytest.mark.parametrize('search, expected_classes', MEMBER_FIXTURES)
-def test_listeners(search, expected_classes):
+@pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
+def test_listeners(search: type[Any], expected_classes: type[Any] | tuple[type[Any], ...]) -> None:
     lookup = EntryPointLookup('lookups.test_entry_point')
 
     result = lookup.lookup_result(search)
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         pass
 
     result.add_lookup_listener(call_me_back)

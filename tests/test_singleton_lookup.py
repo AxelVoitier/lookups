@@ -1,21 +1,23 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 # System imports
 import gc
-from collections.abc import Hashable, Sequence, MutableSequence, Set, MutableSet
+from collections.abc import Hashable, MutableSequence, MutableSet, Sequence, Set
+from typing import Any
 
 # Third-party imports
 import pytest
 
 # Local imports
-from lookups import singleton
-from .tools import TestParentObject, TestChildObject, TestOtherObject
+from lookups import Item, Result, singleton
 
+from .tools import TestChildObject, TestOtherObject, TestParentObject
 
 MEMBER_FIXTURES = [
     # None
@@ -45,14 +47,14 @@ MEMBER_FIXTURES = [
 ]
 
 
-def check_all_instances(member, all_instances):
+def check_all_instances(member: object, all_instances: Sequence[Any]) -> None:
     assert isinstance(all_instances, Sequence)
     assert not isinstance(all_instances, MutableSequence)
     assert len(all_instances) == 1
-    assert all_instances == (member, )
+    assert all_instances == (member,)
 
 
-def check_item(member, id_, item):
+def check_item(member: object, id_: str | None, item: Item[Any] | None) -> None:
     assert item is not None
     assert isinstance(item, Hashable)
 
@@ -67,18 +69,18 @@ def check_item(member, id_, item):
     assert issubclass(item.get_type(), type(member))
 
 
-def test_instantiation():
+def test_instantiation() -> None:
     assert singleton(object(), None)
 
 
-@pytest.mark.parametrize('member, id_, search', MEMBER_FIXTURES)
-def test_lookup(member, id_, search):
+@pytest.mark.parametrize(('member', 'id_', 'search'), MEMBER_FIXTURES)
+def test_lookup(member: object, id_: str | None, search: type[Any]) -> None:
     lookup = singleton(member, id_)
     assert lookup.lookup(search) is member
 
 
-@pytest.mark.parametrize('member, id_, search', MEMBER_FIXTURES)
-def test_lookup_item(member, id_, search):
+@pytest.mark.parametrize(('member', 'id_', 'search'), MEMBER_FIXTURES)
+def test_lookup_item(member: object, id_: str | None, search: type[Any]) -> None:
     lookup = singleton(member, id_)
 
     item = lookup.lookup_item(search)
@@ -86,16 +88,16 @@ def test_lookup_item(member, id_, search):
     assert item == lookup.lookup_item(search)
 
 
-@pytest.mark.parametrize('member, id_, search', MEMBER_FIXTURES)
-def test_lookup_all(member, id_, search):
+@pytest.mark.parametrize(('member', 'id_', 'search'), MEMBER_FIXTURES)
+def test_lookup_all(member: object, id_: str | None, search: type[Any]) -> None:
     lookup = singleton(member, id_)
 
     all_instances = lookup.lookup_all(search)
     check_all_instances(member, all_instances)
 
 
-@pytest.mark.parametrize('member, id_, search', MEMBER_FIXTURES)
-def test_lookup_result(member, id_, search):
+@pytest.mark.parametrize(('member', 'id_', 'search'), MEMBER_FIXTURES)
+def test_lookup_result(member: object, id_: str | None, search: type[Any]) -> None:
     lookup = singleton(member, id_)
 
     result = lookup.lookup_result(search)
@@ -118,13 +120,13 @@ def test_lookup_result(member, id_, search):
     assert all_items[0] == lookup.lookup_item(search)
 
 
-@pytest.mark.parametrize('member, id_, search', MEMBER_FIXTURES)
-def test_listeners(member, id_, search):
+@pytest.mark.parametrize(('member', 'id_', 'search'), MEMBER_FIXTURES)
+def test_listeners(member: object, id_: str | None, search: type[Any]) -> None:
     lookup = singleton(member, id_)
 
     result = lookup.lookup_result(search)
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         pass
 
     result.add_lookup_listener(call_me_back)

@@ -1,35 +1,34 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import annotations  # noqa: F407
+
+from __future__ import annotations
 
 # System imports
 from abc import ABC, abstractmethod
 from collections.abc import Container
-from concurrent.futures import Executor
 from contextlib import contextmanager
 from threading import RLock
-from typing import (
-    Iterable, Collection,
-    MutableSequence, Sequence,
-    AbstractSet, Set,
-    Type, Optional,
-    Iterator, Tuple,
-    Callable,
-)
+from typing import TYPE_CHECKING, Any, TypeVar
 
 # Third-party imports
+from typing_extensions import override
 
 # Local imports
-from .lookup import Lookup, Item, Result
+from .lookup import Item, Lookup, Result
 from .weak_observable import WeakObservable
+
+T = TypeVar('T')
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Iterator, MutableSequence, Sequence, Set
+    from concurrent.futures import Executor
+    from typing import Callable
 
 
 class GenericLookup(Lookup):
-    '''
+    """
     Implementation of the lookup from OpenAPIs that is based on the insertion of Item.
 
     This class should provide the default way of how to store (Class, Object) pairs in the lookups.
@@ -39,18 +38,20 @@ class GenericLookup(Lookup):
     - GenericLookup is the API for users of the lookup.
     - Content is the API for owner/creator of the lookup.
     - Storage is the actual internal place where (Class, Object) pairs are stored.
-    '''
+    """
 
     def __init__(self, content: Content) -> None:
-        '''
+        """
         Constructor to create this lookup and associate it with given Content.
 
         The content then allows the creator to invoke protected methods which are not accessible for
         any other user of the lookup.
 
         :param content: The content to associate with.
-        '''
-        self._storage: Optional[Storage] = None
+        """
+        super().__init__()
+
+        self._storage: Storage | None = None
         self._storage_lock = RLock()
         self._storage_is_used = False
         self._observers = WeakObservable()
@@ -59,23 +60,26 @@ class GenericLookup(Lookup):
 
     @contextmanager
     def _storage_for_lookup(self) -> Iterator[Storage]:
-        from .set_storage import SetStorage
+        from .set_storage import SetStorage  # noqa: PLC0415
 
         with self._storage_lock:
             # Enter storage
-            if self._storage is None:
-                self._storage = SetStorage()
+            if (storage := self._storage) is None:
+                self._storage = storage = SetStorage()
                 self._initialise()
 
-            yield self._storage
+            yield storage
 
     @contextmanager
     def _storage_for_modification(
-            self, ensure: int, notify_in: Executor = None) -> Iterator[Transaction]:
-
+        self,
+        ensure: int,
+        notify_in: Executor | None = None,
+    ) -> Iterator[Transaction]:
         with self._storage_for_lookup() as storage:
             if self._storage_is_used:
-                raise RuntimeError('You are trying to modify a lookup from a lookup query!')
+                msg = 'You are trying to modify a lookup from a lookup query!'
+                raise RuntimeError(msg)
             self._storage_is_used = True
 
             try:
@@ -89,59 +93,61 @@ class GenericLookup(Lookup):
             self._notify_in(notify_in, to_notify)
 
     def _initialise(self) -> None:
-        '''Method for subclasses to initialize themselves.'''
+        """Method for subclasses to initialize themselves."""
 
-    def _before_lookup(self, cls: Type[object]) -> None:
-        '''
+    def _before_lookup(self, cls: type[object]) -> None:
+        """
         Notifies subclasses that a query is about to be processed.
 
         :param cls: Class or type of the objects searched for.
-        '''
+        """
 
-    def _add_pair(self, pair: Pair, notify_in: Executor = None) -> bool:
-        '''
+    def _add_pair(self, pair: Pair[T], notify_in: Executor | None = None) -> bool:
+        """
         The method to add instance to the lookup with.
 
         :param pair: Class/instance pair.
         :param notify_in: The executor that will handle the notification of events.
         :return: True if the pair has been added for the first time or False if some other pair
         equal to this one already existed in the lookup
-        '''
+        """
         with self._storage_for_modification(-2, notify_in) as transaction:
             return transaction.add(pair)
 
-    def _remove_pair(self, pair: Pair, notify_in: Executor = None) -> None:
-        '''
+    def _remove_pair(self, pair: Pair[T], notify_in: Executor | None = None) -> None:
+        """
         Remove instance.
 
         :param pair: Class/instance pair.
         :param notify_in: The executor that will handle the notification of events.
-        '''
+        """
         with self._storage_for_modification(-1, notify_in) as transaction:
             transaction.remove(pair)
 
-    def _set_pairs(self, pairs: Collection[Pair], notify_in: Executor = None) -> None:
-        '''
+    def _set_pairs(self, pairs: Collection[Pair[T]], notify_in: Executor | None = None) -> None:
+        """
         Changes all pairs in the lookup to new values, notifies listeners using provided executor.
 
         :param pairs: The collection of class/instance pairs.
         :param notify_in: The executor that will handle the notification of events.
-        '''
+        """
         with self._storage_for_modification(len(pairs), notify_in) as transaction:
             transaction.set_all(pairs)
 
-    def _notify_in(self, notify_in: Optional[Executor], listeners: Iterable[Result]) -> None:
+    def _notify_in(self, notify_in: Executor | None, listeners: Iterable[Result[T]]) -> None:
         if not notify_in:
             for result in listeners:
-                self._observers.trigger(result, result)
+                self._observers.trigger(result, result)  # pyright: ignore[reportArgumentType]  # observable lacks typing...
         else:
             notify_in.map(self._observers.trigger, listeners, listeners)
 
-    def lookup(self, cls: Type[object]) -> Optional[object]:
+    @override
+    def lookup(self, cls: type[T]) -> T | None:
         item = self.lookup_item(cls)
         return item.get_instance() if item is not None else None
 
-    def lookup_result(self, cls: Type[object]) -> Result:
+    @override
+    def lookup_result(self, cls: type[T]) -> Result[T]:
         self._before_lookup(cls)
         with self._storage_for_lookup() as storage:
             result = storage.find_result(cls)
@@ -153,17 +159,19 @@ class GenericLookup(Lookup):
 
             return result
 
-    def lookup_item(self, cls: Type[object]) -> Optional[Item]:
+    @override
+    def lookup_item(self, cls: type[T]) -> Item[T] | None:
         self._before_lookup(cls)
         with self._storage_for_lookup() as storage:
             for pair in storage.lookup(cls):
                 return pair
-            else:
-                return None
+            return None
 
+    @override
     def __str__(self) -> str:
         return repr(self)
 
+    @override
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(<content>)'
 
@@ -172,121 +180,127 @@ class GenericLookup(Lookup):
 AbstractLookup = GenericLookup
 
 
-class Pair(Item):
-    '''
+class Pair(Item[T]):
+    """
     Extension to the default lookup item that offers additional information for the data structures
     used in GenericLookup.
-    '''
+    """
 
 
-class GLResult(Result):
+class GLResult(Result[T]):
+    def __init__(self, lookup: GenericLookup, cls: type[T]) -> None:
+        super().__init__()
 
-    def __init__(self, lookup: GenericLookup, cls: Type[object]) -> None:
         self._lookup = lookup
         self._cls = cls
 
-        self._classes_cache: Optional[AbstractSet[Type[object]]] = None
-        self._items_cache: Optional[Sequence[Item]] = None
-        self._instances_cache: Optional[Sequence[object]] = None
+        self._classes_cache: Set[type[T]] | None = None
+        self._items_cache: Sequence[Item[T]] | None = None
+        self._instances_cache: Sequence[T] | None = None
 
     def clear_cache(self) -> None:
-        '''To be called when a result is affected by a change during a transaction.'''
+        """To be called when a result is affected by a change during a transaction."""
         self._classes_cache = None
         self._items_cache = None
         self._instances_cache = None
 
-    def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
+    @override
+    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
         self._lookup._observers.on(self, listener)
 
-    def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
-        self._lookup._observers.off(self, listener)
+    @override
+    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
+        self._lookup._observers.off(self, listener)  # pyright: ignore[reportArgumentType, reportUnknownMemberType]  # observable lacks typing...
 
-    def all_classes(self) -> AbstractSet[Type[object]]:
+    @override
+    def all_classes(self) -> Set[type[T]]:
         self._lookup._before_lookup(self._cls)
 
-        if self._classes_cache is not None:
-            return self._classes_cache
+        if (classes := self._classes_cache) is not None:
+            return classes
 
-        classes = frozenset([
-            item.get_type()
-            for item in self._all_items_without_before_lookup()
-        ])
+        classes = frozenset([item.get_type() for item in self._all_items_without_before_lookup()])
 
         self._classes_cache = classes
         return classes
 
-    def all_instances(self) -> Sequence[object]:
+    @override
+    def all_instances(self) -> Sequence[T]:
         self._lookup._before_lookup(self._cls)
 
-        if self._instances_cache:
-            return self._instances_cache
+        if instances := self._instances_cache:
+            return instances
 
-        instances = tuple([
-            item.get_instance()
-            for item in self._all_items_without_before_lookup()
-        ])
+        instances = [item.get_instance() for item in self._all_items_without_before_lookup()]
+        instances = tuple([instance for instance in instances if instance is not None])
 
         self._instances_cache = instances
         return instances
 
-    def all_items(self) -> Sequence[Item]:
+    @override
+    def all_items(self) -> Sequence[Item[T]]:
         self._lookup._before_lookup(self._cls)
         return self._all_items_without_before_lookup()
 
-    def _all_items_without_before_lookup(self) -> Sequence[Item]:
-        if self._items_cache:
-            return self._items_cache
+    def _all_items_without_before_lookup(self) -> Sequence[Item[T]]:
+        if items := self._items_cache:
+            return items
 
         with self._lookup._storage_for_lookup() as storage:
             pairs = tuple(storage.lookup(self._cls))
             self._items_cache = pairs
             return pairs
 
+    @override
     def __str__(self) -> str:
         return repr(self)
 
+    @override
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._lookup!r}, {self._cls!r})'
 
 
-class Content(Container):
-    '''
+class Content(Container[Any]):
+    """
     A class that can be used by the creator of the GenericLookup to control its content (a kind of
     Privileged API giving creator of the lookup more rights than subsequent users of the lookup).
 
     Note that a Content does not store any lookup item!
     The Storage instanciated by GenericLookup does.
-    '''
+    """
 
-    def __init__(self, notify_in: Executor = None) -> None:
-        '''
+    def __init__(self, notify_in: Executor | None = None) -> None:
+        """
         Creates a content associated with an executor to handle dispatch of changes.
 
         :param notify_in: The executor to notify changes in (ie. to listeners of lookup results).
-        '''
-        self._notify_in: Optional[Executor] = notify_in  # Do not serialize
-        self._abstract_lookup: Optional[GenericLookup] = None
-        self._early_pairs: MutableSequence[Pair] = []
+        """
+        super().__init__()
+
+        self._notify_in: Executor | None = notify_in  # Do not serialize
+        self._generic_lookup: GenericLookup | None = None
+        self._early_pairs: MutableSequence[Pair[Any]] = []
 
     def _attach(self, lookup: GenericLookup) -> None:
-        '''
+        """
         A lookup attaches to this object.
-        '''
-        if self._abstract_lookup is None:
-            self._abstract_lookup = lookup
+        """
+        if self._generic_lookup is None:
+            self._generic_lookup = lookup
 
-            if self._early_pairs:
-                self._set_pairs(self._early_pairs)
+            if pairs := self._early_pairs:
+                self._set_pairs(pairs)
                 self._early_pairs = []
 
         else:
-            raise RuntimeError(
+            msg = (
                 f'Trying to use content for {lookup!r} '
-                f'but it is already used for {self._abstract_lookup!r}'
+                f'but it is already used for {self._generic_lookup!r}'
             )
+            raise RuntimeError(msg)
 
-    def _add_pair(self, pair: Pair) -> bool:
-        '''
+    def _add_pair(self, pair: Pair[Any]) -> bool:
+        """
         The method to add a pair to the associated GenericLookup.
 
         Preferably call this method when lookup is already associated with this content (association
@@ -295,50 +309,51 @@ class Content(Container):
         :param pair: Class/instance pair.
         :return: True if the pair has been added for the first time or False if some other pair
         equal to this one already existed in the lookup
-        '''
-        if self._abstract_lookup:
-            return self._abstract_lookup._add_pair(pair, self._notify_in)
+        """
+        if lookup := self._generic_lookup:
+            return lookup._add_pair(pair, self._notify_in)
         else:
             present = pair in self._early_pairs
             self._early_pairs.append(pair)
             return present
 
-    def _remove_pair(self, pair: Pair) -> None:
-        '''
+    def _remove_pair(self, pair: Pair[Any]) -> None:
+        """
         Remove instance.
 
         :param pair: Class/instance pair.
-        '''
-        if self._abstract_lookup:
-            self._abstract_lookup._remove_pair(pair, self._notify_in)
+        """
+        if lookup := self._generic_lookup:
+            lookup._remove_pair(pair, self._notify_in)
         else:
             self._early_pairs.remove(pair)
 
-    def _set_pairs(self, pairs: Collection[Pair]) -> None:
-        '''
+    def _set_pairs(self, pairs: Collection[Pair[Any]]) -> None:
+        """
         Changes all pairs in the lookup to new values.
 
         :param pairs: The collection of class/instance pairs.
-        '''
-        if self._abstract_lookup:
-            self._abstract_lookup._set_pairs(pairs, self._notify_in)
+        """
+        if lookup := self._generic_lookup:
+            lookup._set_pairs(pairs, self._notify_in)
         else:
             self._early_pairs = list(pairs)
 
+    @override
     def __contains__(self, item: object) -> bool:
-        if self._abstract_lookup:
-            with self._abstract_lookup._storage_for_lookup() as storage:
+        if lookup := self._generic_lookup:
+            with lookup._storage_for_lookup() as storage:
                 return item in storage
         else:
             return item in self._early_pairs
 
 
-class Storage(ABC, Container):
-    '''Storage to keep the internal structure of Pairs and to answer different queries.'''
+class Storage(ABC, Container[Any]):
+    """Storage to keep the internal structure of Pairs and to answer different queries."""
 
     @abstractmethod
     def begin_transaction(self, ensure: int) -> Transaction:
-        '''
+        """
         Initializes a modification operation by creating an object that will be passsed to all add,
         remove, retainAll methods and should collect enough information about the change to notify
         listeners about the transaction later.
@@ -348,81 +363,84 @@ class Storage(ABC, Container):
          * -2 == add one
          * >= 0: the amount of objects at the end
         :return: A transaction object
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def end_transaction(self, transaction: Transaction) -> Iterable[GLResult]:
-        '''
+    def end_transaction(self, transaction: Transaction) -> Iterable[GLResult[Any]]:
+        """
         Collects all affected results that were modified in the given transaction.
 
         :param transaction: The transaction object.
         :return: The results affected by a change.
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def lookup(self, cls: Type[object]) -> Iterable[Pair]:
-        '''
+    def lookup(self, cls: type[T]) -> Iterable[Pair[T]]:
+        """
         Queries for instances of given class.
 
         :param cls: The class to search for.
         :return: Iterable of Item
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def register_result(self, result: GLResult) -> None:
-        '''
+    def register_result(self, result: GLResult[T]) -> None:
+        """
         Registers a result with the storage.
 
         :param result: The new result to remember.
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def find_result(self, cls: Type[object]) -> Optional[GLResult]:
-        raise NotImplementedError()  # pragma: no cover
+    def find_result(self, cls: type[T]) -> GLResult[T] | None:
+        raise NotImplementedError  # pragma: no cover
 
 
 class Transaction(ABC):
-    '''Keeps track of changes happening in a Storage'''
+    """Keeps track of changes happening in a Storage"""
 
     @abstractmethod
-    def add(self, pair: Pair) -> bool:
-        '''
+    def add(self, pair: Pair[Any]) -> bool:
+        """
         Adds an item into the storage.
 
         :param item: Item to add.
         :return: True if the Item has been added for the first time or False if some other item
         equal to this one already existed in the lookup
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def remove(self, pair: Pair) -> None:
-        '''
+    def remove(self, pair: Pair[Any]) -> None:
+        """
         Removes an item.
 
         :param item: Item to remove.
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def set_all(self, pairs: Collection[Pair]) -> None:
-        '''
+    def set_all(self, pairs: Collection[Pair[Any]]) -> None:
+        """
         Changes all pairs to new values.
 
         :param pairs: The collection of class/instance pairs.
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def new_content(self, prev: Collection[Pair]) -> Tuple[Collection[Pair], Set[Pair]]:
-        '''
+    def new_content(
+        self,
+        prev: Collection[Pair[Any]],
+    ) -> tuple[Collection[Pair[Any]], Set[Pair[Any]]]:
+        """
         Return the new content once a transaction is finished.
 
         :param prev: The previous content.
         :return: Tuple of new content, set of changes.
-        '''
-        raise NotImplementedError()  # pragma: no cover
+        """
+        raise NotImplementedError  # pragma: no cover

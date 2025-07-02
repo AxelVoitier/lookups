@@ -1,31 +1,29 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2021 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-'''
+"""
 Provides a lookup that get its instances from package entry points.
-'''
+"""
 
 # System imports
 import sys
 from importlib import metadata
 
 # Third-party imports
-
 # Local imports
 from . import SimpleLookup
 
 
 class EntryPointLookup(SimpleLookup):
-    '''
+    """
     Implementation of a lookup that loads its instances from a specified entry-point group.
     Current implementation is simple and static. It might change in the future.
-    '''
+    """
 
     def __init__(self, group: str) -> None:
-        '''
+        """
         Creates new EntryPointLookup object from supplied entry-point group name.
         Entry-points are instantiated using a no-arg constructor call.
         All entry-points are loaded and instantiated at creation.
@@ -38,8 +36,8 @@ class EntryPointLookup(SimpleLookup):
         dynamic entry-points, and so could potentially start with an empty group at first.
 
         :param group: Entry-point group to load instances from.
-        '''
-        eps = metadata.entry_points()  # type: ignore
+        """
+        eps = metadata.entry_points()
         if sys.version_info < (3, 10):
             try:
                 group_eps = eps[group]

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -8,13 +7,14 @@
 # System imports
 
 # Third-party imports
+from typing_extensions import override
 
 # Local imports
 
 
 class TestParentObject:
-
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         return 'This is ' + self.__class__.__name__
 
 
@@ -23,6 +23,6 @@ class TestChildObject(TestParentObject):
 
 
 class TestOtherObject:
-
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         return 'This is ' + self.__class__.__name__

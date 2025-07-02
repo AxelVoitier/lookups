@@ -27,10 +27,10 @@ jobs:
         hatch run lint:check
     - name: Typing check
       run: |
-        hatch run typing:check
+        hatch run typing:check-pyright
     - name: Test with pytest
       run: |
-        hatch test
+        hatch test  -cover
     - name: Codecov
       run : |
         pip install codecov

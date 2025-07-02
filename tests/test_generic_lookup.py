@@ -1,23 +1,38 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 # System imports
 import gc
 import threading
-from collections.abc import Hashable, Sequence, MutableSequence, Set, MutableSet
+from collections.abc import (
+    Collection,
+    Hashable,
+    Iterable,
+    MutableSequence,
+    MutableSet,
+    Sequence,
+    Set,
+)
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 # Third-party imports
 import pytest
+from _pytest.mark.structures import ParameterSet
+from typing_extensions import override
 
 # Local imports
-from lookups import GenericLookup, InstanceContent, Convertor
-from .tools import TestParentObject, TestChildObject, TestOtherObject
+from lookups import Convertor, GenericLookup, InstanceContent, Item, Result
+from lookups.generic_lookup import GLResult
+from lookups.instance_content import ConvertingItem
+from lookups.set_storage import SetStorage
 
+from .tools import TestChildObject, TestOtherObject, TestParentObject
 
 THREAD_WAITING_TIME = 0.025
 
@@ -31,10 +46,11 @@ child2 = TestChildObject()
 other = TestOtherObject()
 
 
-MEMBER_FIXTURES = [
+MEMBER_FIXTURES: list[
+    tuple[Collection[object], type[Any], Sequence[object] | None] | ParameterSet
+] = [
     # 0 member
     ([], object, None),
-
     # 1 member
     pytest.param([None], object, None, marks=pytest.mark.xfail),
     # object
@@ -50,7 +66,6 @@ MEMBER_FIXTURES = [
     ([child], TestParentObject, [child]),
     ([child], TestChildObject, [child]),
     ([child], TestOtherObject, None),
-
     # 2 members
     # None
     pytest.param([None, None], object, None, marks=pytest.mark.xfail),
@@ -76,7 +91,10 @@ MEMBER_FIXTURES = [
 # Helpers
 
 
-def setup_lookup(members, convertor=None):
+def setup_lookup(
+    members: Collection[Any],
+    convertor: Convertor[Any, Any] | None = None,
+) -> tuple[InstanceContent, GenericLookup]:
     content = InstanceContent()
     lookup = GenericLookup(content)
     content.set(members, convertor=convertor)
@@ -84,7 +102,7 @@ def setup_lookup(members, convertor=None):
     return content, lookup
 
 
-def check_all_instances(expected, all_instances):
+def check_all_instances(expected: MutableSequence[Any], all_instances: Iterable[Any]) -> None:
     assert isinstance(all_instances, Sequence)
     assert not isinstance(all_instances, MutableSequence)
     assert len(all_instances) == len(expected)
@@ -93,10 +111,10 @@ def check_all_instances(expected, all_instances):
         expected.remove(instance)
 
 
-def check_item(expected, item):
+def check_item(expected: Sequence[object] | None, item: Item[Any] | None) -> int | None:
     if expected is None:
         assert item is None
-        return
+        return None
 
     assert item is not None
     assert isinstance(item, Hashable)
@@ -114,13 +132,13 @@ def check_item(expected, item):
 # Objects life-cycle
 
 
-def test_instantiation():
+def test_instantiation() -> None:
     assert InstanceContent()
     assert GenericLookup(InstanceContent())
 
 
-def test_cannot_reuse_content():
-    content, lookup = setup_lookup([])
+def test_cannot_reuse_content() -> None:
+    content, _ = setup_lookup([])
 
     with pytest.raises(RuntimeError):
         GenericLookup(content)
@@ -129,7 +147,7 @@ def test_cannot_reuse_content():
 # InstanceContent.add()
 
 
-def test_add_before_attach():
+def test_add_before_attach() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
 
@@ -138,21 +156,19 @@ def test_add_before_attach():
 
     lookup = GenericLookup(content)
 
-    assert lookup._storage
-    assert lookup._storage._content
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert check_in_storage(member)
 
 
-def test_add_after_attach():
+def test_add_after_attach() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
     lookup = GenericLookup(content)
@@ -160,15 +176,13 @@ def test_add_after_attach():
     for member in members:
         content.add(member)
 
-    assert lookup._storage
-    assert lookup._storage._content
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert check_in_storage(member)
@@ -177,7 +191,7 @@ def test_add_after_attach():
 # InstanceContent.set()
 
 
-def test_set_before_attach():
+def test_set_before_attach() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
 
@@ -185,36 +199,32 @@ def test_set_before_attach():
 
     lookup = GenericLookup(content)
 
-    assert lookup._storage
-    assert lookup._storage._content
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert check_in_storage(member)
 
 
-def test_set_after_attach():
+def test_set_after_attach() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
     lookup = GenericLookup(content)
 
     content.set(members)
 
-    assert lookup._storage
-    assert lookup._storage._content
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert check_in_storage(member)
@@ -223,7 +233,7 @@ def test_set_after_attach():
 # InstanceContent.remove()
 
 
-def test_remove_before_attach():
+def test_remove_before_attach() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
     content.set(members)
@@ -237,7 +247,7 @@ def test_remove_before_attach():
     # Can't test much more if no storage here...
 
 
-def test_remove_after_attach():
+def test_remove_after_attach() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
     lookup = GenericLookup(content)
@@ -246,18 +256,16 @@ def test_remove_after_attach():
     for member in members:
         try:
             content.remove(member)
-        except KeyError:
+        except KeyError:  # noqa: PERF203
             print('Could not remove', member)
 
-    assert lookup._storage
-    assert lookup._storage._content == set()
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content == set()
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert not check_in_storage(member)
@@ -266,9 +274,13 @@ def test_remove_after_attach():
 # Basic lookup methods
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup(members, search, expected):
-    content, lookup = setup_lookup(members)
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
+    _, lookup = setup_lookup(members)
 
     if expected:
         assert lookup.lookup(search) in expected
@@ -276,19 +288,27 @@ def test_lookup(members, search, expected):
         assert lookup.lookup(search) is expected
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup_item(members, search, expected):
-    content, lookup = setup_lookup(members)
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_item(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
+    _, lookup = setup_lookup(members)
 
     item = lookup.lookup_item(search)
     check_item(expected, item)
     assert item == lookup.lookup_item(search)
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup_all(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_all(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
     expected = list(expected) if expected is not None else []
-    content, lookup = setup_lookup(members)
+    _, lookup = setup_lookup(members)
 
     all_instances = lookup.lookup_all(search)
     check_all_instances(expected, all_instances)
@@ -297,13 +317,17 @@ def test_lookup_all(members, search, expected):
 # Lookup.lookup_result()
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_lookup_result(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_result(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
     print(members, search, expected)
     expected = list(expected) if expected is not None else []
     print(members, search, expected)
-    expected_classes = {type(instance) for instance in expected}
-    content, lookup = setup_lookup(members)
+    expected_classes: set[type[Any]] = {type(instance) for instance in expected}
+    _, lookup = setup_lookup(members)
 
     result = lookup.lookup_result(search)
     assert result
@@ -323,12 +347,13 @@ def test_lookup_result(members, search, expected):
     assert len(all_items) == len(expected)
     for item, again in zip(all_items, result.all_items()):
         idx = check_item(expected, item)
+        assert idx is not None
         expected.pop(idx)
         assert item == again
 
 
-def test_lookup_result_already_exist():
-    content, lookup = setup_lookup([])
+def test_lookup_result_already_exist() -> None:
+    _, lookup = setup_lookup([])
 
     result1 = lookup.lookup_result(object)
     result2 = lookup.lookup_result(object)
@@ -339,8 +364,12 @@ def test_lookup_result_already_exist():
 # Result listeners
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_listener(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_listener(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
     print(members, search, expected)
     expected = list(expected) if expected is not None else []
     content, lookup = setup_lookup([])
@@ -348,7 +377,7 @@ def test_listener(members, search, expected):
     result = lookup.lookup_result(search)
     assert not result.all_items()
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         nonlocal called_with
         called_with = result
         print('Got called', result)
@@ -426,8 +455,12 @@ def test_listener(members, search, expected):
             assert called_with is None
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_bound_method_listener(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_bound_method_listener(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
     print(members, search, expected)
     expected = list(expected) if expected is not None else []
     content, lookup = setup_lookup([])
@@ -436,8 +469,7 @@ def test_bound_method_listener(members, search, expected):
     assert not result.all_items()
 
     class ToCall:
-
-        def call_me_back(self, result):
+        def call_me_back(self, result: Result[Any]) -> None:
             nonlocal called_with
             called_with = result
             print('Got called', result)
@@ -515,16 +547,16 @@ def test_bound_method_listener(members, search, expected):
             assert called_with is None
 
 
-def test_multiple_listeners():
+def test_multiple_listeners() -> None:
     content, lookup = setup_lookup([])
 
     result = lookup.lookup_result(TestParentObject)
 
-    def call_me_back1(result):
+    def call_me_back1(result: Result[Any]) -> None:
         called_with[1] = result
         print('1 Got called', result)
 
-    def call_me_back2(result):
+    def call_me_back2(result: Result[Any]) -> None:
         called_with[2] = result
         print('2 Got called', result)
 
@@ -534,7 +566,7 @@ def test_multiple_listeners():
 
     members = [obj, obj, obj2, parent, child]
 
-    def check_for_a_class(member, added, cls, result_cls):
+    def check_for_a_class(member: object, added: bool, cls: type[Any], result_cls: object) -> None:  # noqa: FBT001
         if isinstance(member, cls):
             if added:
                 assert 1 in called_with
@@ -548,7 +580,7 @@ def test_multiple_listeners():
         else:
             assert not called_with
 
-    def check_not_called():
+    def check_not_called() -> None:
         for member in members:
             print('Adding', member)
             content.add(member)
@@ -579,7 +611,7 @@ def test_multiple_listeners():
         except KeyError:
             continue
         else:
-            check_for_a_class(member, True, TestParentObject, result)
+            check_for_a_class(member, True, TestParentObject, result)  # noqa: FBT003
             assert not called_with
 
     # Removing listener and adding/removing members
@@ -599,7 +631,7 @@ def test_multiple_listeners():
     check_not_called()
 
 
-def test_multiple_results():
+def test_multiple_results() -> None:
     content, lookup = setup_lookup([])
 
     result_object = lookup.lookup_result(object)
@@ -607,7 +639,8 @@ def test_multiple_results():
     result_child = lookup.lookup_result(TestChildObject)
     result_other = lookup.lookup_result(TestOtherObject)
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
+        assert isinstance(result, GLResult)
         called_with[result._cls] = result
         print('Got called', result)
 
@@ -619,7 +652,7 @@ def test_multiple_results():
 
     members = [obj, obj, obj2, parent]
 
-    def check_for_a_class(member, added, cls, result_cls):
+    def check_for_a_class(member: object, added: bool, cls: type[Any], result_cls: object) -> None:  # noqa: FBT001
         if isinstance(member, cls):
             if added:
                 assert cls in called_with
@@ -630,7 +663,7 @@ def test_multiple_results():
         else:
             assert cls not in called_with
 
-    def check_not_called():
+    def check_not_called() -> None:
         for member in members:
             print('Adding', member)
             content.add(member)
@@ -664,10 +697,10 @@ def test_multiple_results():
         except KeyError:
             continue
         else:
-            check_for_a_class(member, True, object, result_object)
-            check_for_a_class(member, True, TestParentObject, result_parent)
-            check_for_a_class(member, True, TestChildObject, result_child)
-            check_for_a_class(member, True, TestOtherObject, result_other)
+            check_for_a_class(member, True, object, result_object)  # noqa: FBT003
+            check_for_a_class(member, True, TestParentObject, result_parent)  # noqa: FBT003
+            check_for_a_class(member, True, TestChildObject, result_child)  # noqa: FBT003
+            check_for_a_class(member, True, TestOtherObject, result_other)  # noqa: FBT003
             assert not called_with
 
     # Removing listener and adding/removing members
@@ -691,12 +724,12 @@ def test_multiple_results():
 
 
 @pytest.mark.xfail
-def test_modify_lookup_from_listener():
+def test_modify_lookup_from_listener() -> None:
     content, lookup = setup_lookup([])
 
     result_object = lookup.lookup_result(object)
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         content.add(obj2)
 
     result_object.add_lookup_listener(call_me_back)
@@ -704,11 +737,11 @@ def test_modify_lookup_from_listener():
     content.add(obj)
 
 
-def test_del_result_clear_listener():
+def test_del_result_clear_listener() -> None:
     content, lookup = setup_lookup([])
     result_object = lookup.lookup_result(object)
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         nonlocal called_with
         called_with = result
         print('Got called', result)
@@ -730,8 +763,13 @@ def test_del_result_clear_listener():
 # Result listeners with Executor
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_listener_with_executor(members, search, expected, request):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_listener_with_executor(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+    request: pytest.FixtureRequest,
+) -> None:
     print(members, search, expected)
     expected = list(expected) if expected is not None else []
     executor = ThreadPoolExecutor()
@@ -744,7 +782,7 @@ def test_listener_with_executor(members, search, expected, request):
     result = lookup.lookup_result(search)
     assert not result.all_items()
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
         nonlocal called_with, called_in_thread
         called_with = result
         called_in_thread = threading.current_thread()
@@ -762,8 +800,9 @@ def test_listener_with_executor(members, search, expected, request):
         added = content.add(member)
         if member in expected:
             if added:
-                assert called_event.wait(
-                    THREAD_WAITING_TIME), 'Timeout waiting for callback to be called'
+                assert called_event.wait(THREAD_WAITING_TIME), (
+                    'Timeout waiting for callback to be called'
+                )
                 called_event.clear()
                 assert called_with
                 assert member in result.all_instances()
@@ -773,14 +812,16 @@ def test_listener_with_executor(members, search, expected, request):
                 called_with = None
                 called_in_thread = None
             else:
-                assert not called_event.wait(
-                    THREAD_WAITING_TIME), 'Callback got called when it should not'
+                assert not called_event.wait(THREAD_WAITING_TIME), (
+                    'Callback got called when it should not'
+                )
                 assert called_with is None
                 assert called_in_thread is None
                 assert member in result.all_instances()
         else:
-            assert not called_event.wait(
-                THREAD_WAITING_TIME), 'Callback got called when it should not'
+            assert not called_event.wait(THREAD_WAITING_TIME), (
+                'Callback got called when it should not'
+            )
             assert called_with is None
             assert called_in_thread is None
 
@@ -794,8 +835,9 @@ def test_listener_with_executor(members, search, expected, request):
             continue
         else:
             if member in expected:
-                assert called_event.wait(
-                    THREAD_WAITING_TIME), 'Timeout waiting for callback to be called'
+                assert called_event.wait(THREAD_WAITING_TIME), (
+                    'Timeout waiting for callback to be called'
+                )
                 called_event.clear()
                 assert called_with
                 assert member not in result.all_instances()
@@ -805,8 +847,9 @@ def test_listener_with_executor(members, search, expected, request):
                 called_with = None
                 called_in_thread = None
             else:
-                assert not called_event.wait(
-                    THREAD_WAITING_TIME), 'Callback got called when it should not'
+                assert not called_event.wait(THREAD_WAITING_TIME), (
+                    'Callback got called when it should not'
+                )
                 assert called_with is None
                 assert called_in_thread is None
 
@@ -825,13 +868,14 @@ def test_listener_with_executor(members, search, expected, request):
         except KeyError:
             continue
         else:
-            assert not called_event.wait(
-                THREAD_WAITING_TIME), 'Callback got called when it should not'
+            assert not called_event.wait(THREAD_WAITING_TIME), (
+                'Callback got called when it should not'
+            )
             assert called_with is None
             assert called_in_thread is None
 
 
-def test_multiple_results_with_executor(request):
+def test_multiple_results_with_executor(request: pytest.FixtureRequest) -> None:
     executor = ThreadPoolExecutor()
     request.addfinalizer(executor.shutdown)
     content = InstanceContent(notify_in=executor)
@@ -849,7 +893,8 @@ def test_multiple_results_with_executor(request):
         TestOtherObject: threading.Event(),
     }
 
-    def call_me_back(result):
+    def call_me_back(result: Result[Any]) -> None:
+        assert isinstance(result, GLResult)
         called_with[result._cls] = result
         called_in_thread[result._cls] = threading.current_thread()
         print('Got called', result)
@@ -864,11 +909,12 @@ def test_multiple_results_with_executor(request):
 
     members = [obj, obj, obj2, parent]
 
-    def check_for_a_class(member, added, cls, result_cls):
+    def check_for_a_class(member: object, added: bool, cls: type[Any], result_cls: object) -> None:  # noqa: FBT001
         if isinstance(member, cls):
             if added:
-                assert called_events[cls].wait(
-                    THREAD_WAITING_TIME), 'Timeout waiting for callback to be called'
+                assert called_events[cls].wait(THREAD_WAITING_TIME), (
+                    'Timeout waiting for callback to be called'
+                )
                 called_events[cls].clear()
                 assert cls in called_with
                 assert called_with[cls] == result_cls
@@ -877,13 +923,15 @@ def test_multiple_results_with_executor(request):
                 del called_with[cls]
                 del called_in_thread[cls]
             else:
-                assert not called_events[cls].wait(
-                    THREAD_WAITING_TIME), 'Callback got called when it should not'
+                assert not called_events[cls].wait(THREAD_WAITING_TIME), (
+                    'Callback got called when it should not'
+                )
                 assert cls not in called_with
                 assert cls not in called_in_thread
         else:
-            assert not called_events[cls].wait(
-                THREAD_WAITING_TIME), 'Callback got called when it should not'
+            assert not called_events[cls].wait(THREAD_WAITING_TIME), (
+                'Callback got called when it should not'
+            )
             assert cls not in called_with
             assert cls not in called_in_thread
 
@@ -908,10 +956,10 @@ def test_multiple_results_with_executor(request):
         except KeyError:
             continue
         else:
-            check_for_a_class(member, True, object, result_object)
-            check_for_a_class(member, True, TestParentObject, result_parent)
-            check_for_a_class(member, True, TestChildObject, result_child)
-            check_for_a_class(member, True, TestOtherObject, result_other)
+            check_for_a_class(member, True, object, result_object)  # noqa: FBT003
+            check_for_a_class(member, True, TestParentObject, result_parent)  # noqa: FBT003
+            check_for_a_class(member, True, TestChildObject, result_child)  # noqa: FBT003
+            check_for_a_class(member, True, TestOtherObject, result_other)  # noqa: FBT003
             assert not called_with
             assert not called_in_thread
 
@@ -933,8 +981,9 @@ def test_multiple_results_with_executor(request):
         except KeyError:
             continue
         else:
-            assert not called_events[type(member)].wait(
-                THREAD_WAITING_TIME), 'Callback got called when it should not'
+            assert not called_events[type(member)].wait(THREAD_WAITING_TIME), (
+                'Callback got called when it should not'
+            )
             assert not called_with
             assert not called_in_thread
 
@@ -942,68 +991,86 @@ def test_multiple_results_with_executor(request):
 # InstanceContent Convertor
 
 
-class MyConvertor(Convertor):
+class KeyObject:
+    def __init__(self, member: object) -> None:
+        super().__init__()
 
-    def __init__(self, map_):
+        self.member = member
+
+    @override
+    def __repr__(self) -> str:
+        return f'Key({super().__repr__()}) of {self.member!r}'
+
+
+class MyConvertor(Convertor[KeyObject, Any]):
+    def __init__(self, map_: dict[KeyObject, object]) -> None:
+        super().__init__()
+
         self.map = map_
-        self.convert_called = None
-        self.type_called = None
+        self.convert_called: KeyObject | None = None
+        self.type_called: KeyObject | None = None
 
-    def reset(self):
+    def reset(self) -> None:
         print('reset')
         self.convert_called = None
         self.type_called = None
 
-    def convert(self, obj):
+    @override
+    def convert(self, obj: KeyObject) -> Any:
         print('convert called', obj)
         self.convert_called = obj
         return self.map[obj]
 
-    def type(self, obj):
+    @override
+    def type(self, obj: KeyObject) -> type[Any]:
         print('type called', obj)
         self.type_called = obj
         return type(self.map[obj])
 
-    def id(self, obj):
+    @override
+    def id(self, obj: KeyObject) -> str:
         return str(id(obj))
 
-    def display_name(self, obj):
+    @override
+    def display_name(self, obj: KeyObject) -> str:
         return str(obj)
 
 
-class KeyObject:
-
-    def __repr__(self):
-        return f'Key({super().__repr__()}) of {self.member!r}'
-
-
 class WrapObject:
+    def __init__(self, o: object) -> None:
+        super().__init__()
 
-    def __init__(self, o):
         self.o = o
 
-    def __hash__(self):
+    @override
+    def __hash__(self) -> int:
         return hash(self.o)
 
-    def __eq__(self, other):
+    @override
+    def __eq__(self, other: object) -> bool:
         return self.o == other
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f'Wrap({super().__repr__()}) for {self.o!r}'
 
 
-def make_convertor_maps(members):
-    keys_to_members = {}
-    members_to_keys = {}
-    added_members = set()
+def make_convertor_maps(
+    members: Iterable[Any],
+) -> tuple[
+    dict[KeyObject, object],
+    dict[Any, list[KeyObject]],
+]:
+    keys_to_members: dict[KeyObject, object] = {}
+    members_to_keys: dict[Any, list[KeyObject]] = {}
+    added_members: set[object] = set()
     for member in members:
         if type(member) is object:
-            member = WrapObject(member)
+            member = WrapObject(member)  # noqa: PLW2901
         if member in added_members:
             continue
 
-        key = KeyObject()
-        key.member = member
+        key = KeyObject(member)
         keys_to_members[key] = member
         if member not in members_to_keys:
             members_to_keys[member] = []
@@ -1013,94 +1080,92 @@ def make_convertor_maps(members):
     return keys_to_members, members_to_keys
 
 
-def test_convertor_none_key():
-    with pytest.raises(ValueError):
-        content, lookup = setup_lookup([None], MyConvertor({}))
+def test_convertor_none_key() -> None:
+    with pytest.raises(ValueError, match='None cannot be a lookup member'):
+        setup_lookup([None], MyConvertor({}))
 
 
-def test_convertor_add():
+def test_convertor_add() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
     lookup = GenericLookup(content)
 
-    keys_to_members, members_to_keys = make_convertor_maps(members)
+    keys_to_members, _ = make_convertor_maps(members)
     convertor = MyConvertor(keys_to_members)
 
-    for key in keys_to_members.keys():
+    for key in keys_to_members:
         content.add(key, convertor=convertor)
 
-    assert lookup._storage
-    assert lookup._storage._content
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert check_in_storage(member)
 
 
-def test_convertor_set():
+def test_convertor_set() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
     lookup = GenericLookup(content)
 
-    keys_to_members, members_to_keys = make_convertor_maps(members)
+    keys_to_members, _ = make_convertor_maps(members)
     convertor = MyConvertor(keys_to_members)
 
     content.set(keys_to_members.keys(), convertor=convertor)
 
-    assert lookup._storage
-    assert lookup._storage._content
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert check_in_storage(member)
 
 
-def test_convertor_remove():
+def test_convertor_remove() -> None:
     members = [object, parent, child, other, parent]
     content = InstanceContent()
     lookup = GenericLookup(content)
 
-    keys_to_members, members_to_keys = make_convertor_maps(members)
+    keys_to_members, _ = make_convertor_maps(members)
     convertor = MyConvertor(keys_to_members)
     content.set(keys_to_members.keys(), convertor=convertor)
 
-    for key in keys_to_members.keys():
+    for key in keys_to_members:
         try:
             content.remove(key, convertor=convertor)
-        except KeyError:
+        except KeyError:  # noqa: PERF203
             print('Could not remove', key)
 
-    assert lookup._storage
-    assert lookup._storage._content == set()
+    storage = lookup._storage
+    assert storage
+    assert isinstance(storage, SetStorage)
+    assert storage._content == set()
 
-    def check_in_storage(obj):
-        for pair in lookup._storage._content:
-            if pair.get_instance() == obj:
-                return True
-        else:
-            return False
+    def check_in_storage(obj: object) -> bool:
+        return any(pair.get_instance() == obj for pair in storage._content)
 
     for member in members:
         assert not check_in_storage(member)
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_instance_convertor_lookup(members, search, expected):
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_instance_convertor_lookup(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
     keys_to_members, members_to_keys = make_convertor_maps(members)
     convertor = MyConvertor(keys_to_members)
-    content, lookup = setup_lookup(keys_to_members.keys(), convertor)
+    _, lookup = setup_lookup(keys_to_members.keys(), convertor)
 
     got = lookup.lookup(search)
     if expected:
@@ -1116,17 +1181,23 @@ def test_instance_convertor_lookup(members, search, expected):
             assert convertor.type_called is None
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_instance_convertor_lookup_item(members, search, expected):
-    def clear_cache():
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_instance_convertor_lookup_item(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
+    def clear_cache() -> None:
+        assert isinstance(lookup._storage, SetStorage)
         for item in lookup._storage._content:
+            assert isinstance(item, ConvertingItem)
             item._ref = None
         for result in lookup._storage._results.values():
             result.clear_cache()
 
     keys_to_members, members_to_keys = make_convertor_maps(members)
     convertor = MyConvertor(keys_to_members)
-    content, lookup = setup_lookup(keys_to_members.keys(), convertor)
+    _, lookup = setup_lookup(keys_to_members.keys(), convertor)
 
     item = lookup.lookup_item(search)
     check_item(expected, item)
@@ -1136,6 +1207,7 @@ def test_instance_convertor_lookup_item(members, search, expected):
     assert item == lookup.lookup_item(search)
     assert convertor.convert_called is None, 'lookup_item() should not convert the instance'
     if expected:
+        assert item is not None
         assert convertor.type_called in members_to_keys[item.get_instance()]
     else:
         assert convertor.convert_called is None
@@ -1145,17 +1217,23 @@ def test_instance_convertor_lookup_item(members, search, expected):
             assert convertor.type_called is None
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_instance_convertor_lookup_all(members, search, expected):
-    def clear_cache():
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_instance_convertor_lookup_all(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
+    def clear_cache() -> None:
+        assert isinstance(lookup._storage, SetStorage)
         for item in lookup._storage._content:
+            assert isinstance(item, ConvertingItem)
             item._ref = None
         for result in lookup._storage._results.values():
             result.clear_cache()
 
-    keys_to_members, members_to_keys = make_convertor_maps(members)
+    keys_to_members, _ = make_convertor_maps(members)
     convertor = MyConvertor(keys_to_members)
-    content, lookup = setup_lookup(keys_to_members.keys(), convertor)
+    _, lookup = setup_lookup(keys_to_members.keys(), convertor)
 
     expected = list(expected) if expected is not None else []
     all_instances = lookup.lookup_all(search)
@@ -1176,25 +1254,31 @@ def test_instance_convertor_lookup_all(members, search, expected):
             assert convertor.type_called is None
 
 
-@pytest.mark.parametrize('members, search, expected', MEMBER_FIXTURES)
-def test_instance_convertor_lookup_result(members, search, expected):
-    def clear_cache():
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_instance_convertor_lookup_result(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
+    def clear_cache() -> None:
+        assert isinstance(lookup._storage, SetStorage)
         for item in lookup._storage._content:
+            assert isinstance(item, ConvertingItem)
             item._ref = None
         for result in lookup._storage._results.values():
             result.clear_cache()
 
-    def swap_object_cls(cls):
+    def swap_object_cls(cls: type[Any]) -> type[Any]:
         if cls is object:
             return WrapObject
         else:
             return cls
 
     expected = list(expected) if expected is not None else []
-    expected_classes = {swap_object_cls(type(instance)) for instance in expected}
-    keys_to_members, members_to_keys = make_convertor_maps(members)
+    expected_classes = {swap_object_cls(type(instance)) for instance in expected}  # pyright: ignore[reportUnknownArgumentType]
+    keys_to_members, _ = make_convertor_maps(members)
     convertor = MyConvertor(keys_to_members)
-    content, lookup = setup_lookup(keys_to_members.keys(), convertor)
+    _, lookup = setup_lookup(keys_to_members.keys(), convertor)
 
     # lookup_result
 
@@ -1256,6 +1340,7 @@ def test_instance_convertor_lookup_result(members, search, expected):
     assert len(all_items) == len(expected)
     for item, again in zip(all_items, result.all_items()):
         idx = check_item(expected, item)
+        assert idx is not None
         expected.pop(idx)
         assert item == again
     # Clear, as we want to check just what lookup_all() does
@@ -1273,20 +1358,21 @@ def test_instance_convertor_lookup_result(members, search, expected):
 
 
 class MyLookup(GenericLookup):
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._initialise_called = None
         self._before_lookup_called = None
 
-    def _initialise(self):
+    @override
+    def _initialise(self) -> None:
         self._initialise_called = True
 
-    def _before_lookup(self, cls):
+    @override
+    def _before_lookup(self, cls: type[object]) -> None:
         self._before_lookup_called = cls
 
 
-def test_subclass_api():
+def test_subclass_api() -> None:
     content = InstanceContent()
     lookup = MyLookup(content)
 
@@ -1300,20 +1386,21 @@ def test_subclass_api():
 
     lookup.lookup(object)
 
-    assert lookup._before_lookup_called == object
+    assert lookup._before_lookup_called is object
 
 
 # Miscelleanous features
 
 
-def test_str():
-    '''Checks that __str__ don\'t raise exceptions'''
+def test_str() -> None:
+    """Checks that __str__ don\'t raise exceptions"""
     content, lookup = setup_lookup([])
     assert str(content)
     assert str(lookup)
     assert lookup._storage
     assert str(lookup._storage)
     assert str(lookup.lookup_result(object))
+
 
 # TODO:
 # Test GLResult caches

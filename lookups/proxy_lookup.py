@@ -1,76 +1,86 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2021 Contributors as noted in the AUTHORS file
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-'''
+"""
 Provides a lookup that merge results from several lookups.
-'''
+"""
+
+from __future__ import annotations
 
 # System imports
 from itertools import chain
-from typing import Sequence, MutableSequence, AbstractSet, Type, Optional, Callable
+from typing import TYPE_CHECKING, TypeVar
 from weakref import WeakValueDictionary  # , WeakSet
 
 # Third-party imports
+from typing_extensions import override
 
 # Local imports
-from .lookup import Lookup, Item, Result
+from .lookup import Item, Lookup, Result
 from .weak_observable import WeakCallable
+
+T = TypeVar('T')
+if TYPE_CHECKING:
+    from collections.abc import MutableSequence, Sequence, Set
+    from typing import Any, Callable
 
 
 class ProxyLookup(Lookup):
-    '''
+    """
     Implementation of a lookup that concile results from multiple lookups at the same time.
-    '''
+    """
 
     def __init__(self, *lookups: Lookup) -> None:
-        '''
+        """
         Creates a new ProxyLookup from an optional list of lookups to use as sources.
 
         :param lookups: Initial lookup sources.
-        '''
-        self._lookups = list(lookups)
-        self._results: WeakValueDictionary[Type[object], PLResult] = WeakValueDictionary()
-
+        """
         super().__init__()
 
+        self._lookups = list(lookups)
+        self._results: WeakValueDictionary[type[Any], PLResult[Any]] = WeakValueDictionary()
+
     def add_lookup(self, lookup: Lookup) -> None:
-        '''
+        """
         Adds a lookup to the list of sources for the proxy.
         Will update all results accordingly
-        '''
+        """
         self._lookups.append(lookup)
         for result in self._results.values():
             result._lookup_added(lookup)
 
     def remove_lookup(self, lookup: Lookup) -> None:
-        '''
+        """
         Removes a lookup from the list of sources for the proxy.
         Will update all results accordingly
-        '''
+        """
         self._lookups.remove(lookup)
         for result in self._results.values():
             result._lookup_removed(lookup)
 
-    def lookup(self, cls: Type[object]) -> Optional[object]:
+    @override
+    def lookup(self, cls: type[T]) -> T | None:
         for lookup in self._lookups:
             obj = lookup(cls)
             if obj is not None:
                 return obj
-        else:
-            return None
 
-    def lookup_item(self, cls: Type[object]) -> Optional[Item]:
+        return None
+
+    @override
+    def lookup_item(self, cls: type[T]) -> Item[T] | None:
         for lookup in self._lookups:
             item = lookup.lookup_item(cls)
             if item is not None:
                 return item
-        else:
-            return None
 
-    def lookup_result(self, cls: Type[object]) -> Result:
+        return None
+
+    @override
+    def lookup_result(self, cls: type[T]) -> Result[T]:
         result = self._results.get(cls, None)
         if result is not None:
             return result
@@ -81,22 +91,21 @@ class ProxyLookup(Lookup):
         return result
 
 
-class PLResult(Result):
-    '''
+class PLResult(Result[T]):
+    """
     Implementation of a composite result that supports having multiple lookup sources.
     When _lookup_added() or _lookup_removed() are invoked (from ProxyLookup.add/remove_lookup()),
     listeners will be notified if instances appears or dissapears from the composite result.
-    '''
+    """
 
-    def __init__(self, lookup: ProxyLookup, cls: Type[object]) -> None:
+    def __init__(self, lookup: ProxyLookup, cls: type[T]) -> None:
+        super().__init__()
+
         self._lookup = lookup
         self._cls = cls
-        self._listeners: MutableSequence[WeakCallable] = []
+        self._listeners: MutableSequence[WeakCallable[[Result[T]], Any]] = []
 
-        self._results = {
-            lookup: lookup.lookup_result(cls)
-            for lookup in self._lookup._lookups
-        }
+        self._results = {lookup: lookup.lookup_result(cls) for lookup in self._lookup._lookups}
 
     def _lookup_added(self, lookup: Lookup) -> None:
         result = lookup.lookup_result(self._cls)
@@ -126,38 +135,34 @@ class PLResult(Result):
         del self._results[lookup]
         del result
 
-    def add_lookup_listener(self, listener: Callable[[Result], None]) -> None:
+    @override
+    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
         if not self._listeners:
             for result in self._results.values():
                 result.add_lookup_listener(self._proxy_listener)
 
-        self._listeners.append(WeakCallable(listener, self._listeners.remove))
+        self._listeners.append(WeakCallable(listener, self.remove_lookup_listener))
 
-    def remove_lookup_listener(self, listener: Callable[[Result], None]) -> None:
-        self._listeners.remove(listener)  # type: ignore
+    @override
+    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
+        self._listeners.remove(listener)  # pyright: ignore[reportArgumentType]  # WeakCallable.__eq__ handles it transparently
 
         if not self._listeners:
             for result in self._results.values():
                 result.remove_lookup_listener(self._proxy_listener)
 
-    def _proxy_listener(self, result: Result) -> None:
+    def _proxy_listener(self, result: Result[T]) -> None:
         for listener in self._listeners:
             listener(self)
 
-    def all_classes(self) -> AbstractSet[Type[object]]:
-        return frozenset(chain(*(
-            result.all_classes()
-            for result in self._results.values()
-        )))
+    @override
+    def all_classes(self) -> Set[type[T]]:
+        return frozenset(chain(*(result.all_classes() for result in self._results.values())))
 
-    def all_instances(self) -> Sequence[object]:
-        return tuple(chain(*(
-            result.all_instances()
-            for result in self._results.values()
-        )))
+    @override
+    def all_instances(self) -> Sequence[T]:
+        return tuple(chain(*(result.all_instances() for result in self._results.values())))
 
-    def all_items(self) -> Sequence[Item]:
-        return tuple(chain(*(
-            result.all_items()
-            for result in self._results.values()
-        )))
+    @override
+    def all_items(self) -> Sequence[Item[T]]:
+        return tuple(chain(*(result.all_items() for result in self._results.values())))
