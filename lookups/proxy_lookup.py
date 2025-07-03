@@ -11,20 +11,20 @@ from __future__ import annotations
 
 # System imports
 from itertools import chain
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from weakref import WeakValueDictionary  # , WeakSet
 
 # Third-party imports
+from listeners import Listener, ListenerKind, Observable
 from typing_extensions import override
 
 # Local imports
 from .lookup import Item, Lookup, Result
-from .weak_observable import WeakCallable
 
 T = TypeVar('T')
+L = TypeVar('L', bound=Callable[..., Any])
 if TYPE_CHECKING:
-    from collections.abc import MutableSequence, Sequence, Set
-    from typing import Any, Callable
+    from collections.abc import Sequence, Set
 
 
 class ProxyLookup(Lookup):
@@ -91,6 +91,34 @@ class ProxyLookup(Lookup):
         return result
 
 
+class _PLResultListeners(Observable[Callable[[Result[T]], Any]]):
+    def __init__(self, result: PLResult[T]) -> None:
+        super().__init__()
+
+        self.__result = result
+
+    @override
+    def _add_listener(self, listener: Listener[L], listener_kind: ListenerKind) -> None:
+        # On the first listener, we setup our own listener on the proxied result
+        if not self:
+            for result in self.__result._results.values():
+                result.listeners += self._proxy_listener
+
+        super()._add_listener(listener, listener_kind)
+
+    @override
+    def _remove_listener(self, listener: Listener[L]) -> None:
+        super()._remove_listener(listener)
+
+        # On the last listener, we remove our own listener from the proxied result
+        if not self:
+            for result in self.__result._results.values():
+                result.listeners -= self._proxy_listener
+
+    def _proxy_listener(self, result: Result[T]) -> None:
+        self(self.__result)
+
+
 class PLResult(Result[T]):
     """
     Implementation of a composite result that supports having multiple lookup sources.
@@ -103,7 +131,7 @@ class PLResult(Result[T]):
 
         self._lookup = lookup
         self._cls = cls
-        self._listeners: MutableSequence[WeakCallable[[Result[T]], Any]] = []
+        self.listeners: _PLResultListeners[T] = _PLResultListeners(self)
 
         self._results = {lookup: lookup.lookup_result(cls) for lookup in self._lookup._lookups}
 
@@ -111,49 +139,29 @@ class PLResult(Result[T]):
         result = lookup.lookup_result(self._cls)
         self._results[lookup] = result
 
-        if self._listeners:
+        if self.listeners:
             # If this new result already contains some instances, trigger the listeners.
             # Use all_classes() (that should internally use Item.get_type()) instead of
             # all_instances() to avoid loading instances of converted items.
             if result.all_classes():
-                self._proxy_listener(result)
+                self.listeners._proxy_listener(result)
 
-            result.add_lookup_listener(self._proxy_listener)
+            result.listeners += self.listeners._proxy_listener
 
     def _lookup_removed(self, lookup: Lookup) -> None:
         result = self._results[lookup]
 
-        if self._listeners:
-            result.remove_lookup_listener(self._proxy_listener)
+        if self.listeners:
+            result.listeners -= self.listeners._proxy_listener
 
             # If this result contained some instances, trigger the listeners.
             # Use all_classes() (that should internally use Item.get_type()) instead of
             # all_instances() to avoid loading instances of converted items.
             if result.all_classes():
-                self._proxy_listener(result)
+                self.listeners._proxy_listener(result)
 
         del self._results[lookup]
         del result
-
-    @override
-    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        if not self._listeners:
-            for result in self._results.values():
-                result.add_lookup_listener(self._proxy_listener)
-
-        self._listeners.append(WeakCallable(listener, self.remove_lookup_listener))
-
-    @override
-    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        self._listeners.remove(listener)  # pyright: ignore[reportArgumentType]  # WeakCallable.__eq__ handles it transparently
-
-        if not self._listeners:
-            for result in self._results.values():
-                result.remove_lookup_listener(self._proxy_listener)
-
-    def _proxy_listener(self, result: Result[T]) -> None:
-        for listener in self._listeners:
-            listener(self)
 
     @override
     def all_classes(self) -> Set[type[T]]:

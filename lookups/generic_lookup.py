@@ -11,20 +11,19 @@ from abc import ABC, abstractmethod
 from collections.abc import Container
 from contextlib import contextmanager
 from threading import RLock
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 # Third-party imports
+from listeners import Observable
 from typing_extensions import override
 
 # Local imports
 from .lookup import Item, Lookup, Result
-from .weak_observable import WeakObservable
 
 T = TypeVar('T')
 if TYPE_CHECKING:
     from collections.abc import Collection, Iterable, Iterator, MutableSequence, Sequence, Set
     from concurrent.futures import Executor
-    from typing import Callable
 
 
 class GenericLookup(Lookup):
@@ -54,7 +53,6 @@ class GenericLookup(Lookup):
         self._storage: Storage | None = None
         self._storage_lock = RLock()
         self._storage_is_used = False
-        self._observers = WeakObservable()
 
         content._attach(self)
 
@@ -137,9 +135,13 @@ class GenericLookup(Lookup):
     def _notify_in(self, notify_in: Executor | None, listeners: Iterable[Result[T]]) -> None:
         if not notify_in:
             for result in listeners:
-                self._observers.trigger(result, result)  # pyright: ignore[reportArgumentType]  # observable lacks typing...
+                result.listeners(result)
         else:
-            notify_in.map(self._observers.trigger, listeners, listeners)
+            notify_in.map(
+                Observable.__call__,
+                [result.listeners for result in listeners],
+                listeners,
+            )
 
     @override
     def lookup(self, cls: type[T]) -> T | None:
@@ -198,19 +200,13 @@ class GLResult(Result[T]):
         self._items_cache: Sequence[Item[T]] | None = None
         self._instances_cache: Sequence[T] | None = None
 
+        self.listeners = Observable[Callable[[Result[T]], Any]]()
+
     def clear_cache(self) -> None:
         """To be called when a result is affected by a change during a transaction."""
         self._classes_cache = None
         self._items_cache = None
         self._instances_cache = None
-
-    @override
-    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        self._lookup._observers.on(self, listener)
-
-    @override
-    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        self._lookup._observers.off(self, listener)  # pyright: ignore[reportArgumentType, reportUnknownMemberType]  # observable lacks typing...
 
     @override
     def all_classes(self) -> Set[type[T]]:

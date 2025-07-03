@@ -78,7 +78,7 @@ parent_result.all_classes()
 def call_me_back(result):
     print('Result changed. Instances are now', result.all_instances())
 
-parent_result.add_lookup_listener(call_me_back)
+parent_result.listeners += call_me_back
 
 ...
 

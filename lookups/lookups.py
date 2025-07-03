@@ -10,9 +10,10 @@ Static factory methods for creating common lookup implementations.
 from __future__ import annotations
 
 # System imports
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 # Third-party imports
+from listeners import Observable
 from typing_extensions import override
 
 # Local imports
@@ -23,7 +24,6 @@ from .lookup import Item, Lookup, Result
 T = TypeVar('T')
 if TYPE_CHECKING:
     from collections.abc import Sequence, Set
-    from typing import Any, Callable
 
 
 def singleton(member: object, id_: str | None = None) -> Lookup:
@@ -42,13 +42,10 @@ def fixed(*members: object) -> Lookup:
 
 
 class NoResult(Result[T]):
-    @override
-    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        pass
+    def __init__(self) -> None:
+        super().__init__()
 
-    @override
-    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        pass
+        self.listeners = Observable[Callable[[Result[T]], Any]]()
 
     @override
     def all_classes(self) -> Set[type[T]]:

@@ -129,9 +129,9 @@ def test_listeners(member: object, id_: str | None, search: type[Any]) -> None:
     def call_me_back(result: Result[Any]) -> None:
         pass
 
-    result.add_lookup_listener(call_me_back)
-    result.remove_lookup_listener(call_me_back)
+    result.listeners += call_me_back
+    result.listeners -= call_me_back
 
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
     del call_me_back
     gc.collect()

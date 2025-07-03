@@ -7,9 +7,10 @@
 from __future__ import annotations
 
 # System imports
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 # Third-party imports
+from listeners import Observable
 from typing_extensions import override
 
 # Local imports
@@ -19,7 +20,6 @@ from .lookup import Item, Lookup, Result
 T = TypeVar('T')
 if TYPE_CHECKING:
     from collections.abc import Sequence, Set
-    from typing import Any, Callable
 
 
 class SimpleLookup(Lookup):
@@ -57,8 +57,7 @@ class SimpleLookup(Lookup):
 class SimpleResult(Result[T]):
     """
     Result used in SimpleLookup. It holds a reference to the collection passed in constructor.
-    As the contents of this lookup result never changes the add_lookup_listener() and
-    remove_lookup_listener do not do anything.
+    As the contents of this lookup result never changes, listeners are never called.
     """
 
     def __init__(self, simple_lookup: SimpleLookup, cls: type[T]) -> None:
@@ -68,13 +67,7 @@ class SimpleResult(Result[T]):
         self.cls = cls
         self._items: Sequence[Item[T]] | None = None
 
-    @override
-    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        pass
-
-    @override
-    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        pass
+        self.listeners = Observable[Callable[[Result[T]], Any]]()
 
     @override
     def all_classes(self) -> Set[type[T]]:

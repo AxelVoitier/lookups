@@ -9,7 +9,7 @@ from __future__ import annotations
 # System imports
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 # Third-party imports
 from typing_extensions import override
@@ -20,7 +20,8 @@ from typing_extensions import override
 T = TypeVar('T')
 if TYPE_CHECKING:
     from collections.abc import Sequence, Set
-    from typing import Any, Callable
+
+    from listeners import Observable
 
 _logger = logging.getLogger(__name__)
 
@@ -215,29 +216,12 @@ class Result(Generic[T], ABC):
     Result can contain duplicate items.
     """
 
-    @abstractmethod
-    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        """
-        Registers a listener that is invoked when there is a possible change in this result.
+    listeners: Observable[Callable[[Result[T]], Any]]
+    """
+    Observable on which you can register listeners for possible changes in this result.
 
-        LookupListener protocol is to implement the following method:
-
-            def result_changed(self, result: Result) -> None: ...
-
-        Remember to keep a strong reference to the object you are attaching listener to.
-
-        :param listener: The listener to add.
-        """
-        raise NotImplementedError  # pragma: no cover
-
-    @abstractmethod
-    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        """
-        Unregisters a listener previously added.
-
-        :param listener: The listener to remove.
-        """
-        raise NotImplementedError  # pragma: no cover
+    Remember to keep a strong reference to the Result object you are attaching the listener to.
+    """
 
     @abstractmethod
     def all_classes(self) -> Set[type[T]]:

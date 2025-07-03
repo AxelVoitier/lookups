@@ -7,9 +7,10 @@
 from __future__ import annotations
 
 # System imports
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 # Third-party imports
+from listeners import Observable
 from typing_extensions import override
 
 # Local imports
@@ -19,7 +20,6 @@ from .lookup import Item, Lookup, Result
 T = TypeVar('T')
 if TYPE_CHECKING:
     from collections.abc import Sequence, Set
-    from typing import Any, Callable
 
 
 class SingletonLookup(Lookup):
@@ -81,13 +81,7 @@ class SingletonResult(Result[T]):
 
         self._item = item
 
-    @override
-    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        pass
-
-    @override
-    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        pass
+        self.listeners = Observable[Callable[[Result[T]], Any]]()
 
     @override
     def all_classes(self) -> Set[type[T]]:

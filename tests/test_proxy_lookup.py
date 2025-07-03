@@ -492,7 +492,7 @@ def test_listener() -> None:
         called_with = result
         print('Got called', result)
 
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
 
     call_after_remove_del = check_listener(
         content1,
@@ -504,11 +504,11 @@ def test_listener() -> None:
     )
 
     # Removing listener and adding/removing members
-    result.remove_lookup_listener(call_me_back)
+    result.listeners -= call_me_back
     call_after_remove_del()
 
     # Test again, this time deleting the listener
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
     del call_me_back
     gc.collect()
     call_after_remove_del()
@@ -527,7 +527,7 @@ def test_bound_method_listener() -> None:
             print('Got called', result)
 
     to_call = ToCall()
-    result.add_lookup_listener(to_call.call_me_back)
+    result.listeners += to_call.call_me_back
 
     call_after_remove_del = check_listener(
         content1,
@@ -539,11 +539,11 @@ def test_bound_method_listener() -> None:
     )
 
     # Removing listener and adding/removing members
-    result.remove_lookup_listener(to_call.call_me_back)
+    result.listeners -= to_call.call_me_back
     call_after_remove_del()
 
     # Test again, this time deleting the listener
-    result.add_lookup_listener(to_call.call_me_back)
+    result.listeners += to_call.call_me_back
     del to_call
     gc.collect()
     call_after_remove_del()
@@ -563,8 +563,8 @@ def test_multiple_listeners() -> None:
         print('2 Got called', result)
 
     called_with: dict[int, Result[Any]] = {}
-    result.add_lookup_listener(call_me_back1)
-    result.add_lookup_listener(call_me_back2)
+    result.listeners += call_me_back1
+    result.listeners += call_me_back2
 
     members = [object(), TestParentObject(), TestChildObject(), TestOtherObject()]
 
@@ -626,16 +626,16 @@ def test_multiple_listeners() -> None:
 
     # Removing listener and adding/removing members
 
-    result.remove_lookup_listener(call_me_back1)
-    result.remove_lookup_listener(call_me_back2)
+    result.listeners -= call_me_back1
+    result.listeners -= call_me_back2
 
     check_not_called(content1)
     check_not_called(content2)
 
     # Test again, this time deleting the listener object
 
-    result.add_lookup_listener(call_me_back1)
-    result.add_lookup_listener(call_me_back2)
+    result.listeners += call_me_back1
+    result.listeners += call_me_back2
     del call_me_back1
     del call_me_back2
 
@@ -657,10 +657,10 @@ def test_multiple_results() -> None:
         print('Got called', result)
 
     called_with: dict[type[Any], Result[Any]] = {}
-    result_object.add_lookup_listener(call_me_back)
-    result_parent.add_lookup_listener(call_me_back)
-    result_child.add_lookup_listener(call_me_back)
-    result_other.add_lookup_listener(call_me_back)
+    result_object.listeners += call_me_back
+    result_parent.listeners += call_me_back
+    result_child.listeners += call_me_back
+    result_other.listeners += call_me_back
 
     members = [object(), TestParentObject(), TestChildObject(), TestOtherObject()]
 
@@ -725,20 +725,20 @@ def test_multiple_results() -> None:
 
     # Removing listener and adding/removing members
 
-    result_object.remove_lookup_listener(call_me_back)
-    result_parent.remove_lookup_listener(call_me_back)
-    result_child.remove_lookup_listener(call_me_back)
-    result_other.remove_lookup_listener(call_me_back)
+    result_object.listeners -= call_me_back
+    result_parent.listeners -= call_me_back
+    result_child.listeners -= call_me_back
+    result_other.listeners -= call_me_back
 
     check_not_called(content1)
     check_not_called(content2)
 
     # Test again, this time deleting the listener object
 
-    result_object.add_lookup_listener(call_me_back)
-    result_parent.add_lookup_listener(call_me_back)
-    result_child.add_lookup_listener(call_me_back)
-    result_other.add_lookup_listener(call_me_back)
+    result_object.listeners += call_me_back
+    result_parent.listeners += call_me_back
+    result_child.listeners += call_me_back
+    result_other.listeners += call_me_back
     del call_me_back
 
     check_not_called(content1)
@@ -757,7 +757,7 @@ def test_modify_lookup_from_listener() -> None:
     def call_me_back(result: Result[Any]) -> None:
         content1.add(obj2)
 
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
 
     content1.add(obj1)
 
@@ -776,7 +776,7 @@ def test_del_result_clear_listener() -> None:
         print('Got called', result)
 
     called_with = None
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
 
     content1.add(obj1)
     called_with = cast('Result[Any] | None', called_with)

@@ -383,7 +383,7 @@ def test_listener(
         print('Got called', result)
 
     called_with = None
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
 
     # Adding members
 
@@ -421,7 +421,7 @@ def test_listener(
 
     # Removing listener and adding/removing members
 
-    result.remove_lookup_listener(call_me_back)
+    result.listeners -= call_me_back
 
     for member in members:
         print('Adding', member)
@@ -438,7 +438,7 @@ def test_listener(
 
     # Test again, this time deleting the listener
 
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
     del call_me_back
 
     for member in members:
@@ -476,7 +476,7 @@ def test_bound_method_listener(
 
     to_call = ToCall()
     called_with = None
-    result.add_lookup_listener(to_call.call_me_back)
+    result.listeners += to_call.call_me_back
 
     # Adding members
 
@@ -514,7 +514,7 @@ def test_bound_method_listener(
 
     # Removing listener and adding/removing members
 
-    result.remove_lookup_listener(to_call.call_me_back)
+    result.listeners -= to_call.call_me_back
 
     for member in members:
         print('Adding', member)
@@ -530,7 +530,7 @@ def test_bound_method_listener(
             assert called_with is None
 
     # Test again, this time deleting the listener object
-    result.add_lookup_listener(to_call.call_me_back)
+    result.listeners += to_call.call_me_back
     del to_call
 
     for member in members:
@@ -561,8 +561,8 @@ def test_multiple_listeners() -> None:
         print('2 Got called', result)
 
     called_with = {}
-    result.add_lookup_listener(call_me_back1)
-    result.add_lookup_listener(call_me_back2)
+    result.listeners += call_me_back1
+    result.listeners += call_me_back2
 
     members = [obj, obj, obj2, parent, child]
 
@@ -616,15 +616,15 @@ def test_multiple_listeners() -> None:
 
     # Removing listener and adding/removing members
 
-    result.remove_lookup_listener(call_me_back1)
-    result.remove_lookup_listener(call_me_back2)
+    result.listeners -= call_me_back1
+    result.listeners -= call_me_back2
 
     check_not_called()
 
     # Test again, this time deleting the listener object
 
-    result.add_lookup_listener(call_me_back1)
-    result.add_lookup_listener(call_me_back2)
+    result.listeners += call_me_back1
+    result.listeners += call_me_back2
     del call_me_back1
     del call_me_back2
 
@@ -645,10 +645,10 @@ def test_multiple_results() -> None:
         print('Got called', result)
 
     called_with = {}
-    result_object.add_lookup_listener(call_me_back)
-    result_parent.add_lookup_listener(call_me_back)
-    result_child.add_lookup_listener(call_me_back)
-    result_other.add_lookup_listener(call_me_back)
+    result_object.listeners += call_me_back
+    result_parent.listeners += call_me_back
+    result_child.listeners += call_me_back
+    result_other.listeners += call_me_back
 
     members = [obj, obj, obj2, parent]
 
@@ -705,19 +705,19 @@ def test_multiple_results() -> None:
 
     # Removing listener and adding/removing members
 
-    result_object.remove_lookup_listener(call_me_back)
-    result_parent.remove_lookup_listener(call_me_back)
-    result_child.remove_lookup_listener(call_me_back)
-    result_other.remove_lookup_listener(call_me_back)
+    result_object.listeners -= call_me_back
+    result_parent.listeners -= call_me_back
+    result_child.listeners -= call_me_back
+    result_other.listeners -= call_me_back
 
     check_not_called()
 
     # Test again, this time deleting the listener object
 
-    result_object.add_lookup_listener(call_me_back)
-    result_parent.add_lookup_listener(call_me_back)
-    result_child.add_lookup_listener(call_me_back)
-    result_other.add_lookup_listener(call_me_back)
+    result_object.listeners += call_me_back
+    result_parent.listeners += call_me_back
+    result_child.listeners += call_me_back
+    result_other.listeners += call_me_back
     del call_me_back
 
     check_not_called()
@@ -732,7 +732,7 @@ def test_modify_lookup_from_listener() -> None:
     def call_me_back(result: Result[Any]) -> None:
         content.add(obj2)
 
-    result_object.add_lookup_listener(call_me_back)
+    result_object.listeners += call_me_back
 
     content.add(obj)
 
@@ -747,7 +747,7 @@ def test_del_result_clear_listener() -> None:
         print('Got called', result)
 
     called_with = None
-    result_object.add_lookup_listener(call_me_back)
+    result_object.listeners += call_me_back
 
     content.add(obj)
     assert called_with is result_object
@@ -791,7 +791,7 @@ def test_listener_with_executor(
 
     called_with = None
     called_in_thread = None
-    result.add_lookup_listener(call_me_back)
+    result.listeners += call_me_back
 
     # Adding members
 
@@ -855,7 +855,7 @@ def test_listener_with_executor(
 
     # Removing listener and adding/removing members
 
-    result.remove_lookup_listener(call_me_back)
+    result.listeners -= call_me_back
 
     for member in members:
         print('Adding', member)
@@ -902,10 +902,10 @@ def test_multiple_results_with_executor(request: pytest.FixtureRequest) -> None:
 
     called_with = {}
     called_in_thread = {}
-    result_object.add_lookup_listener(call_me_back)
-    result_parent.add_lookup_listener(call_me_back)
-    result_child.add_lookup_listener(call_me_back)
-    result_other.add_lookup_listener(call_me_back)
+    result_object.listeners += call_me_back
+    result_parent.listeners += call_me_back
+    result_child.listeners += call_me_back
+    result_other.listeners += call_me_back
 
     members = [obj, obj, obj2, parent]
 
@@ -965,10 +965,10 @@ def test_multiple_results_with_executor(request: pytest.FixtureRequest) -> None:
 
     # Removing listener and adding/removing members
 
-    result_object.remove_lookup_listener(call_me_back)
-    result_parent.remove_lookup_listener(call_me_back)
-    result_child.remove_lookup_listener(call_me_back)
-    result_other.remove_lookup_listener(call_me_back)
+    result_object.listeners -= call_me_back
+    result_parent.listeners -= call_me_back
+    result_child.listeners -= call_me_back
+    result_other.listeners -= call_me_back
 
     for member in members:
         print('Adding', member)

@@ -12,20 +12,20 @@ Provides a lookup that redirects to another (dynamic) lookup, through a LookupPr
 from __future__ import annotations
 
 # System imports
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from weakref import WeakValueDictionary
 
 # Third-party imports
+from listeners import Listener, ListenerKind, Observable
 from typing_extensions import override
 
 # Local imports
 from .lookup import Item, Lookup, LookupProvider, Result
-from .weak_observable import WeakCallable
 
 T = TypeVar('T')
+L = TypeVar('L', bound=Callable[..., Any])
 if TYPE_CHECKING:
-    from collections.abc import MutableSequence, Sequence, Set
-    from typing import Any, Callable
+    from collections.abc import Sequence, Set
 
 
 class DelegatedLookup(Lookup):
@@ -87,6 +87,32 @@ class DelegatedLookup(Lookup):
         return result
 
 
+class _DelegatedResultListeners(Observable[Callable[[Result[T]], Any]]):
+    def __init__(self, result: DelegatedResult[T]) -> None:
+        super().__init__()
+
+        self.__result = result
+
+    @override
+    def _add_listener(self, listener: Listener[L], listener_kind: ListenerKind) -> None:
+        # On the first listener, we setup our own listener on the delegate
+        if not self:
+            self.__result._delegate.listeners += self._proxy_listener
+
+        super()._add_listener(listener, listener_kind)
+
+    @override
+    def _remove_listener(self, listener: Listener[L]) -> None:
+        super()._remove_listener(listener)
+
+        # On the last listener, we remove our own listener from the delegate
+        if not self:
+            self.__result._delegate.listeners -= self._proxy_listener
+
+    def _proxy_listener(self, result: Result[T]) -> None:
+        self(self.__result)
+
+
 class DelegatedResult(Result[T]):
     """
     Implementation of a result that supports changing lookup source.
@@ -106,43 +132,25 @@ class DelegatedResult(Result[T]):
         self._lookup = lookup
         self._cls = cls
         self._delegate = self._lookup.delegate.lookup_result(self._cls)
-        self._listeners: MutableSequence[WeakCallable[[Result[T]], Any]] = []
+        self.listeners: _DelegatedResultListeners[T] = _DelegatedResultListeners(self)
 
     def lookup_updated(self) -> None:
         result = self._lookup.delegate.lookup_result(self._cls)
         if result != self._delegate:
             old_result, self._delegate = self._delegate, result
 
-            if self._listeners:
-                old_result.remove_lookup_listener(self._proxy_listener)
+            if self.listeners:
+                old_result.listeners -= self.listeners._proxy_listener
 
                 # If these results contains some instances, trigger the listeners.
                 # Use all_classes() (that should internally use Item.get_type()) instead of
                 # all_instances() to avoid loading instances of converted items.
                 if old_result.all_classes() or result.all_classes():
-                    self._proxy_listener(result)
+                    self.listeners._proxy_listener(result)
 
-                result.add_lookup_listener(self._proxy_listener)
+                result.listeners += self.listeners._proxy_listener
 
             del old_result  # Explicit
-
-    @override
-    def add_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        if not self._listeners:
-            self._delegate.add_lookup_listener(self._proxy_listener)
-
-        self._listeners.append(WeakCallable(listener, self.remove_lookup_listener))
-
-    @override
-    def remove_lookup_listener(self, listener: Callable[[Result[T]], Any]) -> None:
-        self._listeners.remove(listener)  # pyright: ignore[reportArgumentType]  # WeakCallable.__eq__ handles it transparently
-
-        if not self._listeners:
-            self._delegate.remove_lookup_listener(self._proxy_listener)
-
-    def _proxy_listener(self, result: Result[T]) -> None:
-        for listener in self._listeners:
-            listener(self)
 
     @override
     def all_classes(self) -> Set[type[T]]:

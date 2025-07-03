@@ -36,7 +36,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "observable",
+    "listeners",
     "typing_extensions",
 ]
 
