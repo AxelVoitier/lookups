@@ -280,7 +280,7 @@ class Content(Container[Any]):
     Privileged API giving creator of the lookup more rights than subsequent users of the lookup).
 
     Note that a Content does not store any lookup item!
-    The Storage instanciated by GenericLookup does.
+    The Storage instantiated by GenericLookup does.
     """
 
     def __init__(self, notify_in: Executor | None = None) -> None:
