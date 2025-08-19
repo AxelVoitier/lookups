@@ -150,7 +150,7 @@ class GenericLookup(Lookup):
         return item.get_instance() if item is not None else None
 
     @override
-    def lookup_result(self, cls: type[T]) -> Result[T]:
+    def lookup_result(self, cls: type[T]) -> GLResult[T]:
         self._before_lookup(cls)
         with self._storage_for_lookup() as storage:
             result = storage.find_result(cls)
@@ -215,7 +215,7 @@ class GLResult(Result[T]):
         self._cls = cls
 
         self._classes_cache: Set[type[T]] | None = None
-        self._items_cache: Sequence[Item[T]] | None = None
+        self._items_cache: Sequence[Pair[T]] | None = None
         self._instances_cache: Sequence[T] | None = None
 
         self.listeners = Observable[Callable[[Result[T]], Any]]()
@@ -252,11 +252,11 @@ class GLResult(Result[T]):
         return instances
 
     @override
-    def all_items(self) -> Sequence[Item[T]]:
+    def all_items(self) -> Sequence[Pair[T]]:
         self._lookup._before_lookup(self._cls)
         return self._all_items_without_before_lookup()
 
-    def _all_items_without_before_lookup(self) -> Sequence[Item[T]]:
+    def _all_items_without_before_lookup(self) -> Sequence[Pair[T]]:
         if items := self._items_cache:
             return items
 
