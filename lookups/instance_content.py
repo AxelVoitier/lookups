@@ -162,6 +162,14 @@ class Convertor(Generic[K, T], ABC):
 class SimpleItem(LookupItem[T], Pair[T]):
     """Instance of one item representing an object."""
 
+    @override  # Pair
+    def instance_of(self, cls: type[Any]) -> bool:
+        return isinstance(self._instance, cls)
+
+    @override  # Pair
+    def creator_of(self, obj: object) -> bool:
+        return self._instance is obj
+
 
 class ConvertingItem(Pair[T], Generic[K, T]):
     """Instance of one item convertible to an object."""
@@ -225,3 +233,11 @@ class ConvertingItem(Pair[T], Generic[K, T]):
             return hash(self._key)
         except TypeError:  # Mutable, cannot be hashed
             return id(self._key)
+
+    @override  # Pair
+    def instance_of(self, cls: type[Any]) -> bool:
+        return issubclass(self.get_type(), cls)
+
+    @override  # Pair
+    def creator_of(self, obj: object) -> bool:
+        return obj is self._get_converted()

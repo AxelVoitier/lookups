@@ -189,6 +189,23 @@ class Pair(Item[T]):
     used in GenericLookup.
     """
 
+    @abstractmethod
+    def instance_of(self, cls: type[Any]) -> bool:
+        """Tests whether this item can produce object of class cls.
+
+        Typically, this would produce the same result than isintance(),
+        but it may avoid loading the concrete type class in doing so."""
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def creator_of(self, obj: object) -> bool:
+        """Method that can test whether an instance of a class has been created by this item.
+
+        Returns if the item has already created an instance and it is the same as obj."""
+
+        raise NotImplementedError
+
 
 class GLResult(Result[T]):
     def __init__(self, lookup: GenericLookup, cls: type[T]) -> None:
