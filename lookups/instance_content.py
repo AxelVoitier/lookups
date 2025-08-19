@@ -99,7 +99,7 @@ class InstanceContent(Content):
 
         self._set_pairs(pairs)
 
-    @override
+    @override  # Content
     def __contains__(self, item: object) -> bool:
         return super().__contains__(SimpleItem(item))
 
@@ -192,15 +192,15 @@ class ConvertingItem(Pair[T], Generic[K, T]):
         else:
             return ref()
 
-    @override
+    @override  # Item
     def get_display_name(self) -> str:
         return self._convertor.display_name(self._key)
 
-    @override
+    @override  # Item
     def get_id(self) -> str:
         return self._convertor.id(self._key)
 
-    @override
+    @override  # Item
     def get_instance(self) -> T | None:
         with self._lock:
             converted = self._get_converted()
@@ -211,7 +211,7 @@ class ConvertingItem(Pair[T], Generic[K, T]):
 
             return converted
 
-    @override
+    @override  # Item
     def get_type(self) -> type[T]:
         converted = self._get_converted()
 
@@ -220,14 +220,14 @@ class ConvertingItem(Pair[T], Generic[K, T]):
         else:
             return type(converted)
 
-    @override
+    @override  # object
     def __eq__(self, other: object) -> bool:
         if isinstance(other, type(self)):
             return self._key == other._key
         else:
             return False
 
-    @override
+    @override  # object
     def __hash__(self) -> int:
         try:
             return hash(self._key)
