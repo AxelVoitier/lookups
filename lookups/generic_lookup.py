@@ -39,7 +39,7 @@ class GenericLookup(Lookup):
     - Storage is the actual internal place where (Class, Object) pairs are stored.
     """
 
-    def __init__(self, content: Content) -> None:
+    def __init__(self, content: Content | None = None) -> None:
         """
         Constructor to create this lookup and associate it with given Content.
 
@@ -54,7 +54,8 @@ class GenericLookup(Lookup):
         self._storage_lock = RLock()
         self._storage_is_used = False
 
-        content._attach(self)
+        if content is not None:
+            content._attach(self)
 
     @contextmanager
     def _storage_for_lookup(self) -> Iterator[Storage]:
