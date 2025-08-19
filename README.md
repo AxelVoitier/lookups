@@ -7,21 +7,33 @@
 [![GitHub build shields.io](https://img.shields.io/github/workflow/status/AxelVoitier/lookups/Python%20package?style=for-the-badge)](https://github.com/AxelVoitier/lookups/actions)
 [![Codecov shields.io](https://img.shields.io/codecov/c/gh/AxelVoitier/lookups?style=for-the-badge)](https://codecov.io/gh/AxelVoitier/lookups)
 
-# lookups - Find object instances
+# lookups - Smart containers for object instances
 
 [DCI](https://en.wikipedia.org/wiki/Data,_context_and_interaction) lookups for Python (inspired by Netbeans Platform [Lookups API](http://wiki.netbeans.org/DevFaqLookup))
 
 ## Principle
 
-A lookup is like a dict where you can store object instances as values. And the search keys are their type classes.
+A lookup is like a dict where you can store object instances as values. And to look them up, the search keys are their type classes.
 
 Simply.
 
 But `lookups` implements a bit more than that:
 * You can also lookup by parent class and not just the most subclasses of an instance.
 * You can get hold of a `lookups.Result`, which allows you to register a listener for a given class search. You will be notified when an instance of that class is added/removed from the lookup.
-* Deferred instanciation with `lookups.Convertor`. That is, an 'instance' can appear in a lookup but not be instanciated until it is actually used (ie. looked up). Useful for heavy objects or plugins.
+* Deferred instantiation with `lookups.Convertor`. That is, an 'instance' can appear in a lookup but not be instantiated until it is actually used (ie. looked up). Useful for heavy objects or plugins.
 * `lookups.Item` can provide you with additional info on an instance: display string, persistence ID string, type, and instance itself.
+
+By searching by parent class, you can neatly separate classes into abstract Service Provider Interfaces (SPI) on one side,
+and one or more concrete service implementations on the other side.
+
+Thanks to an application customisable default lookup, any object can be made accessible from anywhere else in your application.
+When one part of your code needs to communicate with another one, it gets it by searching for its SPI class
+either in the default lookup, or in a more context-dependent one.
+
+No spaghetti code of hardcoded references everywhere. And no dependency injection with heavy upkeep neither.
+It's just one side only care about the service it wants to use without having to bother with which actual one is to be used, or even where it is stored, and what's its lifecycle.
+And another side only care about which concrete implementation to instantiate, without having to deal with who uses it.
+
 
 ## `lookups.GenericLookup`
 
@@ -92,9 +104,10 @@ my_content.remove(child1)
 ## Other lookups
 
 * `lookups.Lookup.get_default()`: The default lookup in a system.
+    * Applications can customise it through a default [package entry points](https://packaging.python.org/en/latest/specifications/entry-points/) named `lookup.default`.
 * `lookups.ProxyLookup`: A lookup that merge results from several lookups.
-* `lookups.DelegatedLookup`: A lookup that redirects to another (dynamic) lookup, through a LookupProvider.
-* `lookups.EntryPointLookup`: A lookup loading its instances from a setuptools entry point group (ie. provided by any installed package).
+* `lookups.DelegatedLookup`: A lookup that redirects to another (dynamic) lookup, through a `lookups.LookupProvider`.
+* `lookups.EntryPointLookup`: A lookup loading its instances from arbitrary package entry point groups (ie. provided by any installed package).
 * `lookups.fixed`: Simple unmodifiable lookup. Content is set at creation time. Will be one of:
     * `lookup.SimpleLookup`: A basic lookup with a static content.
     * `lookups.singleton`: Unmodifiable lookup that contains just one fixed object.
