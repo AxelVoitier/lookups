@@ -12,11 +12,12 @@ Provides a lookup that redirects to another (dynamic) lookup, through a LookupPr
 from __future__ import annotations
 
 # System imports
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from weakref import WeakValueDictionary
 
 # Third-party imports
-from listeners import Listener, ListenerKind, Observable
+from listeners import Listener, Listeners, ListenersChangeEvent, Observable
 from typing_extensions import override
 
 # Local imports
@@ -25,7 +26,7 @@ from .lookup import Item, Lookup, LookupProvider, Result
 T = TypeVar('T')
 L = TypeVar('L', bound=Callable[..., Any])
 if TYPE_CHECKING:
-    from collections.abc import Sequence, Set
+    from collections.abc import Iterator, Sequence, Set
 
 
 class DelegatedLookup(Lookup):
@@ -87,32 +88,6 @@ class DelegatedLookup(Lookup):
         return result
 
 
-class _DelegatedResultListeners(Observable[Callable[[Result[T]], Any]]):
-    def __init__(self, result: DelegatedResult[T]) -> None:
-        super().__init__()
-
-        self.__result = result
-
-    @override
-    def _add_listener(self, listener: Listener[L], listener_kind: ListenerKind) -> None:
-        # On the first listener, we setup our own listener on the delegate
-        if not self:
-            self.__result._delegate.listeners += self._proxy_listener
-
-        super()._add_listener(listener, listener_kind)
-
-    @override
-    def _remove_listener(self, listener: Listener[L]) -> None:
-        super()._remove_listener(listener)
-
-        # On the last listener, we remove our own listener from the delegate
-        if not self:
-            self.__result._delegate.listeners -= self._proxy_listener
-
-    def _proxy_listener(self, result: Result[T]) -> None:
-        self(self.__result)
-
-
 class DelegatedResult(Result[T]):
     """
     Implementation of a result that supports changing lookup source.
@@ -132,7 +107,29 @@ class DelegatedResult(Result[T]):
         self._lookup = lookup
         self._cls = cls
         self._delegate = self._lookup.delegate.lookup_result(self._cls)
-        self.listeners: _DelegatedResultListeners[T] = _DelegatedResultListeners(self)
+        self.listeners = Listeners[Callable[[Result[T]], Any]]()
+        self._observable = Observable(self.listeners)
+        self.listeners.own_changes += self.__on_listeners_change
+
+    @contextmanager
+    def __on_listeners_change(
+        self,
+        listeners: Listeners[Callable[[Result[T]], Any]],
+        event: ListenersChangeEvent,
+        listener: Listener[Callable[[Result[T]], Any]] | None,
+    ) -> Iterator[None]:
+        # On the first listener, we setup our own listener on the delegate
+        if not listeners:
+            self._delegate.listeners += self.__proxy_listener
+
+        yield
+
+        # On the last listener, we remove our own listener from the delegate
+        if not self:
+            self._delegate.listeners -= self.__proxy_listener
+
+    def __proxy_listener(self, result: Result[T]) -> None:
+        self._observable(self)
 
     def lookup_updated(self) -> None:
         result = self._lookup.delegate.lookup_result(self._cls)
@@ -140,15 +137,15 @@ class DelegatedResult(Result[T]):
             old_result, self._delegate = self._delegate, result
 
             if self.listeners:
-                old_result.listeners -= self.listeners._proxy_listener
+                old_result.listeners -= self.__proxy_listener
 
                 # If these results contains some instances, trigger the listeners.
                 # Use all_classes() (that should internally use Item.get_type()) instead of
                 # all_instances() to avoid loading instances of converted items.
                 if old_result.all_classes() or result.all_classes():
-                    self.listeners._proxy_listener(result)
+                    self.__proxy_listener(result)
 
-                result.listeners += self.listeners._proxy_listener
+                result.listeners += self.__proxy_listener
 
             del old_result  # Explicit
 

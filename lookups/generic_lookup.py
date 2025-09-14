@@ -14,7 +14,7 @@ from threading import RLock
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 # Third-party imports
-from listeners import Observable
+from listeners import Listeners, Observable
 from typing_extensions import override
 
 # Local imports
@@ -133,15 +133,15 @@ class GenericLookup(Lookup):
         with self._storage_for_modification(len(pairs), notify_in) as transaction:
             transaction.set_all(pairs)
 
-    def _notify_in(self, notify_in: Executor | None, listeners: Iterable[Result[T]]) -> None:
+    def _notify_in(self, notify_in: Executor | None, results: Iterable[GLResult[T]]) -> None:
         if not notify_in:
-            for result in listeners:
-                result.listeners(result)
+            for result in results:
+                result._observable.bare(result)
         else:
             notify_in.map(
-                Observable.__call__,
-                [result.listeners for result in listeners],
-                listeners,
+                Observable.bare,
+                [result._observable for result in results],
+                results,
             )
 
     @override
@@ -218,7 +218,8 @@ class GLResult(Result[T]):
         self._items_cache: Sequence[Pair[T]] | None = None
         self._instances_cache: Sequence[T] | None = None
 
-        self.listeners = Observable[Callable[[Result[T]], Any]]()
+        self.listeners = Listeners[Callable[[Result[T]], Any]]()
+        self._observable = Observable(self.listeners)
 
     def clear_cache(self) -> None:
         """To be called when a result is affected by a change during a transaction."""

@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 # Third-party imports
-from listeners import Observable
+from listeners import Listeners
 from typing_extensions import override
 
 # Local imports
@@ -81,7 +81,7 @@ class SingletonResult(Result[T]):
 
         self._item = item
 
-        self.listeners = Observable[Callable[[Result[T]], Any]]()
+        self.listeners = Listeners[Callable[[Result[T]], Any]]()
 
     @override
     def all_classes(self) -> Set[type[T]]:

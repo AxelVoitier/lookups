@@ -21,7 +21,7 @@ T = TypeVar('T')
 if TYPE_CHECKING:
     from collections.abc import Sequence, Set
 
-    from listeners import Observable
+    from listeners import Listeners
 
 _logger = logging.getLogger(__name__)
 
@@ -216,7 +216,7 @@ class Result(Generic[T], ABC):
     Result can contain duplicate items.
     """
 
-    listeners: Observable[Callable[[Result[T]], Any]]
+    listeners: Listeners[Callable[[Result[T]], Any]]
     """
     Observable on which you can register listeners for possible changes in this result.
 
