@@ -126,7 +126,7 @@ class DelegatedResult(Result[T]):
         yield
 
         # On the last listener, we remove our own listener from the delegate
-        if not self:
+        if not listeners:
             self._delegate.listeners -= self.__proxy_listener
 
     def __proxy_listener(self, result: Result[T]) -> None:
