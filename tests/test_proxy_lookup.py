@@ -9,6 +9,7 @@ from __future__ import annotations
 # System imports
 import gc
 from collections.abc import (
+    Callable,
     Collection,
     Container,
     Hashable,
@@ -19,7 +20,7 @@ from collections.abc import (
     Set,
 )
 from functools import partial
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 # Third-party imports
 import pytest
@@ -99,7 +100,7 @@ def check_result(expected: Collection[object], result: Result[Any]) -> None:
     assert isinstance(all_items, Sequence)
     assert not isinstance(all_items, MutableSequence)
     assert len(all_items) == len(expected)
-    for item, again in zip(all_items, result.all_items()):
+    for item, again in zip(all_items, result.all_items(), strict=True):
         idx = check_item(expected_copy2, item)
         assert idx is not None
         expected_copy2.pop(idx)
@@ -408,7 +409,7 @@ def check_listener(
 
     check_add_remove([parent], [child, other], [parent])
 
-    # Setup for checking invokation on add
+    # Setup for checking invocation on add
     content1.set([parent])
     assert called_with is result
     called_with = None
@@ -432,7 +433,7 @@ def check_listener(
 
     check_add_remove([parent], [child, other], [parent, child])
 
-    # Setup for checking invokation on remove
+    # Setup for checking invocation on remove
     content1.set([parent])
     assert called_with is result
     called_with = None
@@ -456,7 +457,7 @@ def check_listener(
 
     check_add_remove([parent], [child, other], [child])
 
-    # Setup for checking non-invokation on remove
+    # Setup for checking non-invocation on remove
     content1.set([parent])
     assert called_with is None
     # Leave content2 empty

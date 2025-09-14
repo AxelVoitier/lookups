@@ -10,7 +10,8 @@ Static factory methods for creating common lookup implementations.
 from __future__ import annotations
 
 # System imports
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, TypeVar
 
 # Third-party imports
 from listeners import Listeners

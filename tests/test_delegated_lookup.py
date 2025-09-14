@@ -141,7 +141,7 @@ def check_result(expected: Collection[Any], result: Result[Any]) -> None:
     assert isinstance(all_items, Sequence)
     assert not isinstance(all_items, MutableSequence)
     assert len(all_items) == len(expected)
-    for item, again in zip(all_items, result.all_items()):
+    for item, again in zip(all_items, result.all_items(), strict=True):
         idx = check_item(expected_copy2, item)
         assert idx is not None
         expected_copy2.pop(idx)
@@ -169,7 +169,7 @@ def test_lookup() -> None:
     instance = delegated_lookup.lookup(TestOtherObject)
     assert not instance
 
-    # Swtich to lookup2
+    # Switch to lookup2
     provider.lookup = lookup2
 
     instance = delegated_lookup.lookup(TestParentObject)
@@ -179,7 +179,7 @@ def test_lookup() -> None:
     assert instance
     assert instance is other
 
-    # Swtich back to lookup1
+    # Switch back to lookup1
     provider.lookup = lookup1
 
     instance = delegated_lookup.lookup(TestParentObject)
@@ -216,7 +216,7 @@ def test_lookup_item() -> None:
     item = delegated_lookup.lookup_item(TestOtherObject)
     check_item(None, item)
 
-    # Swtich to lookup2
+    # Switch to lookup2
     provider.lookup = lookup2
 
     item = delegated_lookup.lookup_item(TestParentObject)
@@ -225,7 +225,7 @@ def test_lookup_item() -> None:
     item = delegated_lookup.lookup_item(TestOtherObject)
     check_item(other, item)
 
-    # Swtich back to lookup1
+    # Switch back to lookup1
     provider.lookup = lookup1
 
     item = delegated_lookup.lookup_item(TestParentObject)
@@ -262,7 +262,7 @@ def test_lookup_all() -> None:
     all_instances = delegated_lookup.lookup_all(TestOtherObject)
     check_all_instances([], all_instances)
 
-    # Swtich to lookup2
+    # Switch to lookup2
     provider.lookup = lookup2
 
     all_instances = delegated_lookup.lookup_all(TestParentObject)
@@ -271,7 +271,7 @@ def test_lookup_all() -> None:
     all_instances = delegated_lookup.lookup_all(TestOtherObject)
     check_all_instances([other], all_instances)
 
-    # Swtich back to lookup1
+    # Switch back to lookup1
     provider.lookup = lookup1
 
     all_instances = delegated_lookup.lookup_all(TestParentObject)
@@ -308,7 +308,7 @@ def test_lookup_result() -> None:
     result = delegated_lookup.lookup_result(TestOtherObject)
     check_result([], result)
 
-    # Swtich to lookup2
+    # Switch to lookup2
     provider.lookup = lookup2
 
     result = delegated_lookup.lookup_result(TestParentObject)
@@ -317,7 +317,7 @@ def test_lookup_result() -> None:
     result = delegated_lookup.lookup_result(TestOtherObject)
     check_result([other], result)
 
-    # Swtich back to lookup1
+    # Switch back to lookup1
     provider.lookup = lookup1
 
     result = delegated_lookup.lookup_result(TestParentObject)
@@ -345,12 +345,12 @@ def test_lookup_result_already_exist() -> None:
 
     assert result1 is delegated_lookup.lookup_result(object)
 
-    # Swtich to lookup2
+    # Switch to lookup2
     provider.lookup = lookup2
 
     assert result1 is delegated_lookup.lookup_result(object)
 
-    # Swtich back to lookup1
+    # Switch back to lookup1
     provider.lookup = lookup1
 
     assert result1 is delegated_lookup.lookup_result(object)
@@ -429,14 +429,14 @@ def check_listener(
 
     check_add_remove([parent], [child, other], [parent])
 
-    # Setup for checking invokation on switch
+    # Setup for checking invocation on switch
     content1.set([parent])
     assert called_with is result
     called_with = None
     content2.set([child, other])
     assert called_with is None
 
-    # Swtich to lookup2
+    # Switch to lookup2
     provider.lookup = lookup2
 
     assert called_with is result
@@ -452,13 +452,13 @@ def check_listener(
 
     check_add_remove([parent], [child, other], [child])
 
-    # Swtich back to lookup1 (should not be invoked as lookups are empty)
+    # Switch back to lookup1 (should not be invoked as lookups are empty)
     provider.lookup = lookup1
     assert called_with is None
 
     check_add_remove([parent], [child, other], [parent])
 
-    # Setup for checking invokation on switch
+    # Setup for checking invocation on switch
     content1.set([parent])
     assert called_with is result
     called_with = None

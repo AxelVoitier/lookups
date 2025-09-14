@@ -3,6 +3,9 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# spell-checker:words
+# spell-checker:ignore addfinalizer
 
 from __future__ import annotations
 
@@ -345,7 +348,7 @@ def test_lookup_result(
     assert isinstance(all_items, Sequence)
     assert not isinstance(all_items, MutableSequence)
     assert len(all_items) == len(expected)
-    for item, again in zip(all_items, result.all_items()):
+    for item, again in zip(all_items, result.all_items(), strict=True):
         idx = check_item(expected, item)
         assert idx is not None
         expected.pop(idx)
@@ -1338,7 +1341,7 @@ def test_instance_convertor_lookup_result(
     assert isinstance(all_items, Sequence)
     assert not isinstance(all_items, MutableSequence)
     assert len(all_items) == len(expected)
-    for item, again in zip(all_items, result.all_items()):
+    for item, again in zip(all_items, result.all_items(), strict=True):
         idx = check_item(expected, item)
         assert idx is not None
         expected.pop(idx)
@@ -1389,7 +1392,7 @@ def test_subclass_api() -> None:
     assert lookup._before_lookup_called is object
 
 
-# Miscelleanous features
+# Miscellaneous features
 
 
 def test_str() -> None:

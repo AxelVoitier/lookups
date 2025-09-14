@@ -12,8 +12,9 @@ Provides a lookup that redirects to another (dynamic) lookup, through a LookupPr
 from __future__ import annotations
 
 # System imports
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from weakref import WeakValueDictionary
 
 # Third-party imports

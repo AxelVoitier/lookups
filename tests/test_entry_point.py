@@ -59,8 +59,8 @@ def test_instantiation() -> None:
     assert EntryPointLookup('lookups.test_entry_point')
 
 
-def test_non_existant_group() -> None:
-    assert EntryPointLookup('non-existant')
+def test_non_existent_group() -> None:
+    assert EntryPointLookup('non-existent')
 
 
 @pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
@@ -114,7 +114,7 @@ def test_lookup_result(
     all_items = result.all_items()
     assert isinstance(all_items, Sequence)
     assert not isinstance(all_items, MutableSequence)
-    for item, again in zip(all_items, result.all_items()):
+    for item, again in zip(all_items, result.all_items(), strict=True):
         check_item(expected_classes, item)
         assert item == again
 

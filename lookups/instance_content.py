@@ -104,7 +104,7 @@ class InstanceContent(Content):
         return super().__contains__(SimpleItem(item))
 
 
-class Convertor(Generic[K, T], ABC):
+class Convertor(ABC, Generic[K, T]):
     """Convertor postpones an instantiation of an object."""
 
     @abstractmethod

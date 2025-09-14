@@ -10,9 +10,10 @@ Provides a lookup that merge results from several lookups.
 from __future__ import annotations
 
 # System imports
+from collections.abc import Callable
 from contextlib import contextmanager
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from weakref import WeakValueDictionary  # , WeakSet
 
 # Third-party imports

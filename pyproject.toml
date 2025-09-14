@@ -124,7 +124,7 @@ a_lookup = "tests.test_lookup_default:DefaultLookup"
 [project.entry-points."lookups.test_default_lookup_lookup_provider"]
 a_lookup = "tests.test_lookup_default:DefaultLookupLookupProvider"
 [project.entry-points."lookups.test_default_lookup_provider"]
-a_lookup = "tests.test_lookup_default:DefaulLookupProvider"
+a_lookup = "tests.test_lookup_default:DefaultLookupProvider"
 [project.entry-points."lookups.test_default_no_lookup"]
 parent = "tests.tools:TestParentObject"
 child = "tests.tools:TestChildObject"

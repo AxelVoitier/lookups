@@ -8,10 +8,10 @@ from __future__ import annotations
 
 # System imports
 from abc import ABC, abstractmethod
-from collections.abc import Container
+from collections.abc import Callable, Container
 from contextlib import contextmanager
 from threading import RLock
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 # Third-party imports
 from listeners import Listeners, Observable

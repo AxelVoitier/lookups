@@ -8,7 +8,6 @@ Provides a lookup that get its instances from package entry points.
 """
 
 # System imports
-import sys
 from importlib import metadata
 
 # Third-party imports
@@ -38,13 +37,7 @@ class EntryPointLookup(SimpleLookup):
         :param group: Entry-point group to load instances from.
         """
         eps = metadata.entry_points()
-        if sys.version_info < (3, 10):
-            try:
-                group_eps = eps[group]
-            except KeyError:
-                group_eps = []
-        else:
-            group_eps = eps.select(group=group)
+        group_eps = eps.select(group=group)
 
         instances = [ep.load()() for ep in group_eps]
 

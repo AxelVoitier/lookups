@@ -3,8 +3,11 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# spell-checker:words
+# spell-checker:ignore dflt
 
-# System imports
+from __future__ import annotations
 
 # Third-party imports
 from collections.abc import Iterator
@@ -18,13 +21,15 @@ from lookups.singleton import SingletonLookup
 
 from .tools import TestChildObject, TestOtherObject, TestParentObject
 
+# System imports
+
 
 class DefaultLookup(SingletonLookup):
     def __init__(self) -> None:
         super().__init__(TestParentObject())
 
 
-class DefaulLookupProvider(LookupProvider):
+class DefaultLookupProvider(LookupProvider):
     @override
     def get_lookup(self) -> Lookup:
         return SingletonLookup(TestParentObject())

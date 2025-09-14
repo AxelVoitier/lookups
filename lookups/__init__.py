@@ -6,16 +6,6 @@
 
 # ruff: noqa: I001  # Order matters to avoid cyclic imports
 
-from .__about__ import (
-    __author__,
-    __copyright__,
-    __email__,
-    __license__,
-    __summary__,
-    __title__,
-    __uri__,
-    __version__,
-)
 from .lookup import (
     Item,
     Lookup,
@@ -44,14 +34,6 @@ __all__ = [
     'ProxyLookup',
     'Result',
     'SimpleLookup',
-    '__author__',
-    '__copyright__',
-    '__email__',
-    '__license__',
-    '__summary__',
-    '__title__',
-    '__uri__',
-    '__version__',
     'fixed',
     'singleton',
 ]

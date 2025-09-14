@@ -9,7 +9,7 @@ from __future__ import annotations
 # System imports
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 # Third-party imports
 from typing_extensions import override
@@ -19,7 +19,7 @@ from typing_extensions import override
 
 T = TypeVar('T')
 if TYPE_CHECKING:
-    from collections.abc import Sequence, Set
+    from collections.abc import Callable, Sequence, Set
 
     from listeners import Listeners
 
@@ -149,7 +149,7 @@ class Lookup(ABC):
         return self.lookup_result(cls).all_instances()
 
 
-class Item(Generic[T], ABC):
+class Item(ABC, Generic[T]):
     """
     A single item in a lookup result.
 
@@ -207,7 +207,7 @@ class Item(Generic[T], ABC):
         return self.get_id()
 
 
-class Result(Generic[T], ABC):
+class Result(ABC, Generic[T]):
     """
     Result of a lookup request.
 

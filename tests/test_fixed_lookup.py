@@ -161,7 +161,7 @@ def test_lookup_result(
     assert isinstance(all_items, Sequence)
     assert not isinstance(all_items, MutableSequence)
     assert len(all_items) == len(expected)
-    for item, instance, again in zip(all_items, expected, result.all_items()):
+    for item, instance, again in zip(all_items, expected, result.all_items(), strict=True):
         check_item(instance, item)
         assert item == again
 
