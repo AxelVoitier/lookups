@@ -12,7 +12,7 @@ license-files = [ "LICENSE" ]
 authors = [
   { name = "Axel Voitier", email = "axel.voitier@gmail.com" },
 ]
-requires-python = "~=3.9"
+requires-python = "~=3.10"
 keywords = ["lookup", "lookups", "dci"]
 classifiers = [
   # "Development Status :: 1 - Planning",
@@ -23,7 +23,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",  # Py 3.9 EOL: 2025/10
   "Programming Language :: Python :: 3.10",  # Py 3.10 EOL: 2026/10
   "Programming Language :: Python :: 3.11",  # Py 3.11 EOL: 2027/10
   "Programming Language :: Python :: 3.12",  # Py 3.12 EOL: 2028/10
@@ -90,7 +89,6 @@ check = [
 
 # [[tool.hatch.envs.typing.matrix]]
 # python = [
-#   "3.9",
 #   "3.10",
 #   "3.11",
 #   "3.12",
@@ -110,7 +108,6 @@ run-x = "py.test --cov=lookups --cov-report=term-missing --cov-report=xml:cov.xm
 
 [[tool.hatch.envs.tests.matrix]]
 python = [
-  "3.9",
   "3.10",
   "3.11",
   "3.12",
