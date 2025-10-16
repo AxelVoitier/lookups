@@ -227,6 +227,11 @@ class GLResult(Result[T]):
         self._items_cache = None
         self._instances_cache = None
 
+    @property
+    @override
+    def for_class(self) -> type[T]:
+        return self._cls
+
     @override
     def all_classes(self) -> Set[type[T]]:
         self._lookup._before_lookup(self._cls)

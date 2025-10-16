@@ -51,6 +51,8 @@ def test_lookup_result() -> None:
     result = lookup.lookup_result(object)
     assert result
 
+    assert result.for_class is object
+
     all_classes = result.all_classes()
     assert isinstance(all_classes, Set)
     assert not isinstance(all_classes, MutableSet)

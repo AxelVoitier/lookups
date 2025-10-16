@@ -148,6 +148,8 @@ def test_lookup_result(
     result = lookup.lookup_result(search)
     assert result
 
+    assert result.for_class is search
+
     all_classes = result.all_classes()
     assert isinstance(all_classes, Set)
     assert not isinstance(all_classes, MutableSet)

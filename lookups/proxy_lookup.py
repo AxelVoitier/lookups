@@ -161,6 +161,11 @@ class PLResult(Result[T]):
         del self._results[lookup]
         del result
 
+    @property
+    @override
+    def for_class(self) -> type[T]:
+        return self._cls
+
     @override
     def all_classes(self) -> Set[type[T]]:
         return frozenset(chain(*(result.all_classes() for result in self._results.values())))

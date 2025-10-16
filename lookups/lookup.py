@@ -223,6 +223,12 @@ class Result(ABC, Generic[T]):
     Remember to keep a strong reference to the Result object you are attaching the listener to.
     """
 
+    @property
+    @abstractmethod
+    def for_class(self) -> type[T]:
+        """Returns the looked up class associated for this result."""
+        raise NotImplementedError  # pragma: no cover
+
     @abstractmethod
     def all_classes(self) -> Set[type[T]]:
         """

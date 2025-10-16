@@ -65,10 +65,15 @@ class SimpleResult(Result[T]):
         super().__init__()
 
         self.lookup = simple_lookup
-        self.cls = cls
+        self._cls = cls
         self._items: Sequence[Item[T]] | None = None
 
         self.listeners = Listeners[Callable[[Result[T]], Any]]()
+
+    @property
+    @override
+    def for_class(self) -> type[T]:
+        return self._cls
 
     @override
     def all_classes(self) -> Set[type[T]]:
@@ -82,7 +87,7 @@ class SimpleResult(Result[T]):
     def all_items(self) -> Sequence[Item[T]]:
         if (items := self._items) is None:
             self._items = items = tuple(
-                item for item in self.lookup.all_items if issubclass(item.get_type(), self.cls)
+                item for item in self.lookup.all_items if issubclass(item.get_type(), self._cls)
             )
 
         return items

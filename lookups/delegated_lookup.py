@@ -150,6 +150,11 @@ class DelegatedResult(Result[T]):
 
             del old_result  # Explicit
 
+    @property
+    @override
+    def for_class(self) -> type[T]:
+        return self._cls
+
     @override
     def all_classes(self) -> Set[type[T]]:
         return self._delegate.all_classes()

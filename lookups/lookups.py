@@ -43,10 +43,16 @@ def fixed(*members: object) -> Lookup:
 
 
 class NoResult(Result[T]):
-    def __init__(self) -> None:
+    def __init__(self, cls: type[T]) -> None:
         super().__init__()
 
+        self._cls = cls
         self.listeners = Listeners[Callable[[Result[T]], Any]]()
+
+    @property
+    @override
+    def for_class(self) -> type[T]:
+        return self._cls
 
     @override
     def all_classes(self) -> Set[type[T]]:
@@ -62,15 +68,13 @@ class NoResult(Result[T]):
 
 
 class EmptyLookup(Lookup):
-    NO_RESULT: Result[Any] = NoResult()
-
     @override
     def lookup(self, cls: type[T]) -> None:
         return None
 
     @override
     def lookup_result(self, cls: type[T]) -> Result[T]:
-        return self.NO_RESULT
+        return NoResult(cls)
 
 
 class LookupItem(Item[T]):

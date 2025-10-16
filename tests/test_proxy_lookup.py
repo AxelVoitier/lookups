@@ -80,12 +80,14 @@ def check_item(expected: object | Sequence[object] | None, item: Item[Any] | Non
         return None
 
 
-def check_result(expected: Collection[object], result: Result[Any]) -> None:
+def check_result(expected: Collection[object], for_class: type[Any], result: Result[Any]) -> None:
     expected_classes = {type(instance) for instance in expected}
     expected_copy1 = list(expected)
     expected_copy2 = list(expected)
 
     assert result
+
+    assert result.for_class is for_class
 
     all_classes = result.all_classes()
     assert isinstance(all_classes, Set)
@@ -271,40 +273,40 @@ def test_lookup_result() -> None:
     # Test without lookup2
 
     result = proxy_lookup.lookup_result(TestParentObject)
-    check_result([parent, child], result)
+    check_result([parent, child], TestParentObject, result)
 
     result = proxy_lookup.lookup_result(TestOtherObject)
-    check_result([], result)
+    check_result([], TestOtherObject, result)
 
     # Add lookup2
 
     proxy_lookup.add_lookup(lookup2)
 
     result = proxy_lookup.lookup_result(TestParentObject)
-    check_result([parent, child], result)
+    check_result([parent, child], TestParentObject, result)
 
     result = proxy_lookup.lookup_result(TestOtherObject)
-    check_result([other], result)
+    check_result([other], TestOtherObject, result)
 
     # Remove lookup1
 
     proxy_lookup.remove_lookup(lookup1)
 
     result = proxy_lookup.lookup_result(TestParentObject)
-    check_result([], result)
+    check_result([], TestParentObject, result)
 
     result = proxy_lookup.lookup_result(TestOtherObject)
-    check_result([other], result)
+    check_result([other], TestOtherObject, result)
 
     # Remove lookup2 (empty lookup)
 
     proxy_lookup.remove_lookup(lookup2)
 
     result = proxy_lookup.lookup_result(TestParentObject)
-    check_result([], result)
+    check_result([], TestParentObject, result)
 
     result = proxy_lookup.lookup_result(TestOtherObject)
-    check_result([], result)
+    check_result([], TestOtherObject, result)
 
 
 def test_lookup_result_already_exist() -> None:

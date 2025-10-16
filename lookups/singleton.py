@@ -53,7 +53,7 @@ class SingletonLookup(Lookup):
     def lookup_result(self, cls: type[T]) -> Result[T]:
         item = self.lookup_item(cls)
         if item is not None:
-            return SingletonResult(item)
+            return SingletonResult(item, cls)
         else:
             return lookups.EmptyLookup().lookup_result(cls)
 
@@ -77,12 +77,18 @@ class SingletonLookup(Lookup):
 
 
 class SingletonResult(Result[T]):
-    def __init__(self, item: Item[T]) -> None:
+    def __init__(self, item: Item[T], cls: type[T]) -> None:
         super().__init__()
 
         self._item = item
+        self._cls = cls
 
         self.listeners = Listeners[Callable[[Result[T]], Any]]()
+
+    @property
+    @override
+    def for_class(self) -> type[T]:
+        return self._cls
 
     @override
     def all_classes(self) -> Set[type[T]]:

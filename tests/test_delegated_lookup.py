@@ -121,12 +121,14 @@ def check_item(expected: object | Sequence[object] | None, item: Item[Any] | Non
         return None
 
 
-def check_result(expected: Collection[Any], result: Result[Any]) -> None:
+def check_result(expected: Collection[Any], for_class: type[Any], result: Result[Any]) -> None:
     expected_classes: set[type[Any]] = {type(instance) for instance in expected}
     expected_copy1 = list(expected)
     expected_copy2 = list(expected)
 
     assert result
+
+    assert result.for_class is for_class
 
     all_classes = result.all_classes()
     assert isinstance(all_classes, Set)
@@ -303,37 +305,37 @@ def test_lookup_result() -> None:
     # Test with lookup1
 
     result = delegated_lookup.lookup_result(TestParentObject)
-    check_result([parent, child], result)
+    check_result([parent, child], TestParentObject, result)
 
     result = delegated_lookup.lookup_result(TestOtherObject)
-    check_result([], result)
+    check_result([], TestOtherObject, result)
 
     # Switch to lookup2
     provider.lookup = lookup2
 
     result = delegated_lookup.lookup_result(TestParentObject)
-    check_result([], result)
+    check_result([], TestParentObject, result)
 
     result = delegated_lookup.lookup_result(TestOtherObject)
-    check_result([other], result)
+    check_result([other], TestOtherObject, result)
 
     # Switch back to lookup1
     provider.lookup = lookup1
 
     result = delegated_lookup.lookup_result(TestParentObject)
-    check_result([parent, child], result)
+    check_result([parent, child], TestParentObject, result)
 
     result = delegated_lookup.lookup_result(TestOtherObject)
-    check_result([], result)
+    check_result([], TestOtherObject, result)
 
     # Stay with lookup1 but trigger an update
     provider.lookup = lookup1
 
     result = delegated_lookup.lookup_result(TestParentObject)
-    check_result([parent, child], result)
+    check_result([parent, child], TestParentObject, result)
 
     result = delegated_lookup.lookup_result(TestOtherObject)
-    check_result([], result)
+    check_result([], TestOtherObject, result)
 
 
 def test_lookup_result_already_exist() -> None:
