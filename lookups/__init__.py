@@ -10,6 +10,7 @@ from .lookup import (
     Item,
     Lookup,
     LookupProvider,
+    NoneLookupError,
     Result,
 )
 from .lookups import EmptyLookup, fixed, singleton
@@ -31,6 +32,7 @@ __all__ = [
     'Item',
     'Lookup',
     'LookupProvider',
+    'NoneLookupError',
     'ProxyLookup',
     'Result',
     'SimpleLookup',

@@ -35,6 +35,7 @@ from lookups import (
     Item,
     Lookup,
     LookupProvider,
+    NoneLookupError,
     Result,
 )
 from lookups.delegated_lookup import DelegatedResult
@@ -200,6 +201,54 @@ def test_lookup() -> None:
 
     instance = delegated_lookup.lookup(TestOtherObject)
     assert not instance
+
+
+def test_lookup_expected() -> None:
+    content1, lookup1, content2, lookup2, provider, delegated_lookup = setup_lookups()
+
+    parent = TestParentObject()
+    content1.add(parent)
+    other = TestOtherObject()
+    content2.add(other)
+
+    # Test with lookup1
+
+    instance = delegated_lookup.lookup_expected(TestParentObject)
+    assert instance
+    assert instance is parent
+
+    with pytest.raises(NoneLookupError):
+        delegated_lookup.lookup_expected(TestOtherObject)
+
+    # Switch to lookup2
+    provider.lookup = lookup2
+
+    with pytest.raises(NoneLookupError):
+        delegated_lookup.lookup_expected(TestParentObject)
+
+    instance = delegated_lookup.lookup_expected(TestOtherObject)
+    assert instance
+    assert instance is other
+
+    # Switch back to lookup1
+    provider.lookup = lookup1
+
+    instance = delegated_lookup.lookup_expected(TestParentObject)
+    assert instance
+    assert instance is parent
+
+    with pytest.raises(NoneLookupError):
+        delegated_lookup.lookup_expected(TestOtherObject)
+
+    # Stay with lookup1 but trigger an update
+    provider.lookup = lookup1
+
+    instance = delegated_lookup.lookup_expected(TestParentObject)
+    assert instance
+    assert instance is parent
+
+    with pytest.raises(NoneLookupError):
+        delegated_lookup.lookup_expected(TestOtherObject)
 
 
 def test_lookup_item() -> None:

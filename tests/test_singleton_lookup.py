@@ -80,6 +80,12 @@ def test_lookup(member: object, id_: str | None, search: type[Any]) -> None:
 
 
 @pytest.mark.parametrize(('member', 'id_', 'search'), MEMBER_FIXTURES)
+def test_lookup_expected(member: object, id_: str | None, search: type[Any]) -> None:
+    lookup = singleton(member, id_)
+    assert lookup.lookup_expected(search) is member
+
+
+@pytest.mark.parametrize(('member', 'id_', 'search'), MEMBER_FIXTURES)
 def test_lookup_item(member: object, id_: str | None, search: type[Any]) -> None:
     lookup = singleton(member, id_)
 

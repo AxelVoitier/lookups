@@ -26,7 +26,15 @@ from typing import Any, cast
 import pytest
 
 # Local imports
-from lookups import GenericLookup, InstanceContent, Item, Lookup, ProxyLookup, Result
+from lookups import (
+    GenericLookup,
+    InstanceContent,
+    Item,
+    Lookup,
+    NoneLookupError,
+    ProxyLookup,
+    Result,
+)
 from lookups.proxy_lookup import PLResult
 
 from .tools import TestChildObject, TestOtherObject, TestParentObject
@@ -162,6 +170,57 @@ def test_lookup() -> None:
 
     instance = proxy_lookup.lookup(TestOtherObject)
     assert not instance
+
+
+def test_lookup_expected() -> None:
+    content1, lookup1, content2, lookup2, proxy_lookup = setup_lookups()
+
+    parent = TestParentObject()
+    content1.add(parent)
+    other = TestOtherObject()
+    content2.add(other)
+
+    # Test without lookup2
+
+    instance = proxy_lookup.lookup_expected(TestParentObject)
+    assert instance
+    assert instance is parent
+
+    with pytest.raises(NoneLookupError):
+        proxy_lookup.lookup_expected(TestOtherObject)
+
+    # Add lookup2
+
+    proxy_lookup.add_lookup(lookup2)
+
+    instance = proxy_lookup.lookup_expected(TestParentObject)
+    assert instance
+    assert instance is parent
+
+    instance = proxy_lookup.lookup_expected(TestOtherObject)
+    assert instance
+    assert instance is other
+
+    # Remove lookup1
+
+    proxy_lookup.remove_lookup(lookup1)
+
+    with pytest.raises(NoneLookupError):
+        proxy_lookup.lookup_expected(TestParentObject)
+
+    instance = proxy_lookup.lookup_expected(TestOtherObject)
+    assert instance
+    assert instance is other
+
+    # Remove lookup2 (empty lookup)
+
+    proxy_lookup.remove_lookup(lookup2)
+
+    with pytest.raises(NoneLookupError):
+        proxy_lookup.lookup_expected(TestParentObject)
+
+    with pytest.raises(NoneLookupError):
+        proxy_lookup.lookup_expected(TestOtherObject)
 
 
 def test_lookup_item() -> None:

@@ -16,7 +16,7 @@ import pytest
 from _pytest.mark.structures import ParameterSet
 
 # Local imports
-from lookups import Item, Result, fixed
+from lookups import Item, NoneLookupError, Result, fixed
 
 from .tools import TestChildObject, TestOtherObject, TestParentObject
 
@@ -106,6 +106,22 @@ def test_lookup(
     lookup = fixed(*members)
 
     assert lookup.lookup(search) == expected_first
+
+
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_expected(
+    members: Iterable[object],
+    search: type[Any],
+    expected: Sequence[object],
+) -> None:
+    expected_first = expected[0] if expected else None
+    lookup = fixed(*members)
+
+    if expected_first is not None:
+        assert lookup.lookup_expected(search) == expected_first
+    else:
+        with pytest.raises(NoneLookupError):
+            lookup.lookup_expected(search)
 
 
 @pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)

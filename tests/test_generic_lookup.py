@@ -30,7 +30,7 @@ from _pytest.mark.structures import ParameterSet
 from typing_extensions import override
 
 # Local imports
-from lookups import Convertor, GenericLookup, InstanceContent, Item, Result
+from lookups import Convertor, GenericLookup, InstanceContent, Item, NoneLookupError, Result
 from lookups.generic_lookup import GLResult
 from lookups.instance_content import ConvertingItem
 from lookups.set_storage import SetStorage
@@ -289,6 +289,21 @@ def test_lookup(
         assert lookup.lookup(search) in expected
     else:
         assert lookup.lookup(search) is expected
+
+
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_lookup_expected(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
+    _, lookup = setup_lookup(members)
+
+    if expected:
+        assert lookup.lookup_expected(search) in expected
+    else:
+        with pytest.raises(NoneLookupError):
+            lookup.lookup_expected(search)
 
 
 @pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
@@ -1179,6 +1194,32 @@ def test_instance_convertor_lookup(
         assert convertor.type_called in members_to_keys[got]
     else:
         assert got is None
+        assert convertor.convert_called is None
+        if members:
+            assert isinstance(convertor.type_called, KeyObject)
+        else:
+            assert convertor.type_called is None
+
+
+@pytest.mark.parametrize(('members', 'search', 'expected'), MEMBER_FIXTURES)
+def test_instance_convertor_lookup_expected(
+    members: Collection[Any],
+    search: type[Any],
+    expected: Sequence[Any] | None,
+) -> None:
+    keys_to_members, members_to_keys = make_convertor_maps(members)
+    convertor = MyConvertor(keys_to_members)
+    _, lookup = setup_lookup(keys_to_members.keys(), convertor)
+
+    if expected:
+        got = lookup.lookup_expected(search)
+        assert got in expected
+        assert convertor.convert_called in members_to_keys[got]
+        assert convertor.type_called in members_to_keys[got]
+    else:
+        with pytest.raises(NoneLookupError):
+            lookup.lookup_expected(search)
+
         assert convertor.convert_called is None
         if members:
             assert isinstance(convertor.type_called, KeyObject)

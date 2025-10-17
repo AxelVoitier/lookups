@@ -26,6 +26,10 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
+class NoneLookupError(Exception):
+    pass
+
+
 class Lookup(ABC):
     """
     A general registry permitting clients to find instances of services (implementation of a given
@@ -106,6 +110,23 @@ class Lookup(ABC):
 
     def __call__(self, cls: type[T]) -> T | None:
         return self.lookup(cls)
+
+    def lookup_expected(self, cls: type[T]) -> T:
+        """
+        Look up an object matching a given type. Raises an exception if there are None.
+
+        If more than one object matches, the first will be returned.
+        The template class may be a class or a type.
+        The instance is guaranteed to be non-None, and of the same type.
+
+        :param cls: Class or type of the object we are searching for.
+        :return: An object implementing the given type.
+        :raises: NoneLookupError if no instance could be found.
+        """
+        if (instance := self.lookup(cls)) is not None:
+            return instance
+
+        raise NoneLookupError
 
     @abstractmethod
     def lookup_result(self, cls: type[T]) -> Result[T]:

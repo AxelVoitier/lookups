@@ -71,6 +71,16 @@ def test_lookup(search: type[Any], expected_classes: type[Any] | tuple[type[Any]
 
 
 @pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
+def test_lookup_expected(
+    search: type[Any],
+    expected_classes: type[Any] | tuple[type[Any], ...],
+) -> None:
+    lookup = EntryPointLookup('lookups.test_entry_point')
+
+    assert isinstance(lookup.lookup_expected(search), expected_classes)
+
+
+@pytest.mark.parametrize(('search', 'expected_classes'), MEMBER_FIXTURES)
 def test_lookup_item(
     search: type[Any],
     expected_classes: type[Any] | tuple[type[Any], ...],

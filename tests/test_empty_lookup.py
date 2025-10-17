@@ -12,8 +12,10 @@ from collections.abc import MutableSequence, MutableSet, Sequence, Set
 from typing import Any
 
 # Third-party imports
+import pytest
+
 # Local imports
-from lookups import EmptyLookup, Result
+from lookups import EmptyLookup, NoneLookupError, Result
 
 
 def check_all_instances(all_instances: Sequence[Any]) -> None:
@@ -29,6 +31,12 @@ def test_instantiation() -> None:
 def test_lookup() -> None:
     lookup = EmptyLookup()
     assert lookup.lookup(object) is None
+
+
+def test_lookup_expected() -> None:
+    lookup = EmptyLookup()
+    with pytest.raises(NoneLookupError):
+        lookup.lookup_expected(object)
 
 
 def test_lookup_item() -> None:
